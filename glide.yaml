@@ -1,0 +1,5 @@
+package: .
+import:
+- package: github.com/hashicorp/terraform
+- package: gopkg.in/rightscale/rsc.v5
+- package: bitbucket.org/pkg/inflect

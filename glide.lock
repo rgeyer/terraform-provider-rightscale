@@ -1,0 +1,44 @@
+hash: b79a4c83a17d0b5d34824bdfe68dbbd923c9d20dbe0796dbdc7678505fd403bf
+updated: 2016-04-20T23:43:02.770426952Z
+imports:
+- name: github.com/alecthomas/template
+  version: a0175ee3bccc567396460bf5acd36800cb10c49c
+  subpackages:
+  - parse
+- name: github.com/alecthomas/units
+  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/gorilla/websocket
+  version: e2e3d8414d0fbae04004f151979f4e27c6747fe7
+- name: github.com/mattn/go-colorable
+  version: 9cbef7c35391cca05f15f8181dc0b18bc9736dbb
+- name: github.com/mattn/go-isatty
+  version: 56b76bdf51f7708750eac80fa38b952bb9f32639
+- name: github.com/rightscale/rsc
+  version: fc48e44d419a59223f89bc61a45ef7c15b3619e8
+  subpackages:
+  - cm15
+  - cmd
+  - metadata
+  - rsapi
+  - httpclient
+  - log
+  - recording
+- name: golang.org/x/net
+  version: fb93926129b8ec0056f2f458b1f519654814edf0
+  subpackages:
+  - context
+  - context/ctxhttp
+- name: golang.org/x/sys
+  version: f64b50fbea64174967a8882830d621a18ee1548e
+  subpackages:
+  - unix
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 8cccfa8eb2e3183254457fb1749b2667fbc364c7
+- name: gopkg.in/inconshreveable/log15.v2
+  version: b105bd37f74e5d9dc7b6ad7806715c7a2b83fd3f
+  subpackages:
+  - stack
+  - term
+- name: gopkg.in/rightscale/rsc.v5
+  version: 12aa5e68178b32555661ffecee20fe6fa5bf3da9
+devImports: []
