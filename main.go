@@ -165,7 +165,21 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
             temp_attr.SetSchemaTypes(cmdFlag.Type)
 						temp_attr.Debug = fmt.Sprintf("%s\n// Matched at subMatch[2] == '' -- Operating at root: %t", temp_attr.Debug, operating_at_root)
           } else if subMatchIdx  == (len(submatches)-1) {
-						temp_attr.Debug = fmt.Sprintf("%s\n// Matched at subMatchIdx == last -- Operating at root: %t", temp_attr.Debug, operating_at_root)
+						if temp_attr.Name != subMatch[2] {
+							if temp_attr.Children == nil {
+								temp_attr.Children = make(map[string]*TerraformSchemaAttribute)
+							}
+							if _, ok := temp_attr.Children[subMatch[2]]; !ok {
+								temp_attr.Children[subMatch[2]] = &TerraformSchemaAttribute{
+									Name: subMatch[2],
+								}
+								temp_attr.Children[subMatch[2]].SetSchemaTypes(cmdFlag.Type)
+								temp_attr.Children[subMatch[2]].Debug = fmt.Sprintf("%s\n// Assigned inside of last subMatch but child name didn't match parent name")
+							} else {
+								temp_attr.Debug = fmt.Sprintf("%s\n// Found %s as a child key in the last subMatchIdx branch", temp_attr.Debug, subMatch[2])
+							}
+							temp_attr.Debug = fmt.Sprintf("%s\n// Matched at subMatchIdx == last -- Operating at root: %t", temp_attr.Debug, operating_at_root)
+						}
 					} else {
             child := subMatch[2]
 						// fmt.Println(fmt.Sprintf("Assigning child %s to parent %s using submatch %q", child, this_key, subMatch))
@@ -209,6 +223,7 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
 							fmt.Println("Finished setting temp_attr to nil")
 						} else {
 							temp_attr.Debug = fmt.Sprintf("%s\n// (Below Root) My children became the parent map. -- Submatch: %q -- CmdFlag: %s", temp_attr.Debug, subMatch, cmdFlag.Name)
+							parent_map[this_key] = temp_attr
 							parent_map = temp_attr.Children
 							temp_attr = nil
 						}
