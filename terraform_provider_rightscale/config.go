@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gopkg.in/rightscale/rsc.v5/cm15"
-	"gopkg.in/rightscale/rsc.v5/rsapi"
+	"github.com/rightscale/rsc/cm15"
+	"github.com/rightscale/rsc/rsapi"
 )
 
 // Config struct holds params for rightscale client

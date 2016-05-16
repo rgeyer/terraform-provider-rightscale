@@ -9,8 +9,8 @@ import (
   "regexp"
 	"text/template"
 
-	"gopkg.in/rightscale/rsc.v5/metadata"
-  "gopkg.in/rightscale/rsc.v5/cm15"
+	"github.com/rightscale/rsc/metadata"
+  "github.com/rightscale/rsc/cm15"
   "bitbucket.org/pkg/inflect"
 )
 
@@ -166,6 +166,7 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
 						temp_attr.Debug = fmt.Sprintf("%s\n// Matched at subMatch[2] == '' -- Operating at root: %t", temp_attr.Debug, operating_at_root)
           } else if subMatchIdx  == (len(submatches)-1) {
 						if temp_attr.Name != subMatch[2] {
+							temp_attr.SchemaType = "schema.TypeSet"
 							if temp_attr.Children == nil {
 								temp_attr.Children = make(map[string]*TerraformSchemaAttribute)
 							}
@@ -326,8 +327,8 @@ import (
   "log"
 	"io/ioutil"
 	"github.com/hashicorp/terraform/helper/schema"
-	"gopkg.in/rightscale/rsc.v5/cm15"
-	"gopkg.in/rightscale/rsc.v5/rsapi"
+	"github.com/rightscale/rsc/cm15"
+	"github.com/rightscale/rsc/rsapi"
 )
 `
 
@@ -344,7 +345,7 @@ const resourceTerraformTmpl = `{{define "schemaObject"}}// DEBUG INFO {{.Debug}}
 		},{{else}}{{if .Elem}}
 		Elem: {{.Elem}},{{end}}{{end}}{{if .ForceNew}}
 		ForceNew: true,{{end}}
-	}{{end}}{{range .}}{{$resource := .}}
+	}{{end}}{{range .}}{{$resource := .}}{{$attributes := terraformSchemaAttributes .}}
 func resourceRightScale{{$resource.Name}}() *schema.Resource {
 	return &schema.Resource{ {{range .Actions}}{{$action := .}}
 		// ACTION: {{$action.Name}}
@@ -360,7 +361,7 @@ func resourceRightScale{{$resource.Name}}() *schema.Resource {
 {{end}}{{if eq .Name "destroy"}}Delete: resourceRightScale{{$resource.Name}}Delete,
 {{end}}{{end}}
 
-		Schema: map[string]*schema.Schema{ {{range terraformSchemaAttributes .}}
+		Schema: map[string]*schema.Schema{ {{range $attributes}}
 			{{template "schemaObject" .}},
 		{{end}}},
 	}
@@ -371,6 +372,13 @@ func resourceRightScale{{$resource.Name}}() *schema.Resource {
   client := meta.(*cm15.API)
   {{$firstPath := index $action.PathPatterns 0}}
 	params := rsapi.APIParams{}
+
+	{{range $attributes}}{{if not .Computed}}if val, ok := d.GetOk("{{.Name}}"); ok {
+		params["{{.Name}}"] = val
+		log.Printf("DEBUG Val for attribute was %q", val)
+	}
+	{{end}}{{end}}
+
 	req, err := client.BuildRequest("{{$resource.Name}}", "{{$action.Name}}", "{{$firstPath.Pattern}}", params)
 	if err != nil {
 		message := fmt.Sprintf("{{$resource.Name}} Could not create HTTP request. Error: %s", err.Error())

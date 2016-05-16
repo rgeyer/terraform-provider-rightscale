@@ -9,8 +9,10 @@ provider "rightscale" {
 }
 
 resource "rightscale_deployment" "terraform-test" {
-  name        = "Test Created from Terraform"
-  description = "Description"
+  deployment {
+    name        = "Test Created from Terraform"
+    description = "Description"
+  }
 }
 
 output "rightscale_deployment.terraform-test.href" {

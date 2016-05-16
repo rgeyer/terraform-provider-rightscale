@@ -1,5 +1,10 @@
 package: .
 import:
 - package: github.com/hashicorp/terraform
-- package: gopkg.in/rightscale/rsc.v5
+  vcs: git
+  version: v0.6.16
+  repo: https://github.com/hashicorp/terraform.git
+- package: github.com/rightscale/rsc
+  vcs: git
+  repo: https://github.com/rgeyer/rsc.git
 - package: bitbucket.org/pkg/inflect
