@@ -7,6 +7,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/rightscale/rsc/cm15"
@@ -14,6 +15,29 @@ import (
 	"io/ioutil"
 	"log"
 )
+
+func recursiveSchemaSetValueGet(key string, val interface{}, param_map map[string]interface{}) {
+	if set, ok := val.(*schema.Set); ok {
+		child_map := make(map[string]interface{})
+		param_map[key] = child_map
+		for _, elem := range set.List() {
+			elemMap := elem.(map[string]interface{})
+			for set_key, value := range elemMap {
+				if _, ok := value.(*schema.Set); ok {
+					recursiveSchemaSetValueGet(set_key, value, child_map)
+				} else {
+					if value != "" && value != "0" {
+						child_map[set_key] = value
+					}
+				}
+			}
+		}
+	} else {
+		if val != "" && val != "0" {
+			param_map[key] = val
+		}
+	}
+}
 
 func resourceRightScaleAccount() *schema.Resource {
 	return &schema.Resource{
@@ -26,13 +50,6 @@ func resourceRightScaleAccount() *schema.Resource {
 		Read: resourceRightScaleAccountRead,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO
 			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
@@ -70,11 +87,60 @@ func resourceRightScaleAccount() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceRightScaleAccountRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Account", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Account Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Account Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Account HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Account Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Account Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Account Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -95,6 +161,14 @@ func resourceRightScaleAccountGroup() *schema.Resource {
 		Read: resourceRightScaleAccountGroupRead,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
 			// DEBUG INFO
 			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
@@ -130,19 +204,53 @@ func resourceRightScaleAccountGroup() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
 		},
 	}
 }
 
 func resourceRightScaleAccountGroupRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("AccountGroup", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("AccountGroup Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("AccountGroup Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AccountGroup HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("AccountGroup Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AccountGroup Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("AccountGroup Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -181,13 +289,6 @@ func resourceRightScaleAlert() *schema.Resource {
 		Read: resourceRightScaleAlertRead,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
@@ -231,11 +332,60 @@ func resourceRightScaleAlert() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceRightScaleAlertRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Alert", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Alert Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Alert Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Alert HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Alert Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Alert Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Alert Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -291,50 +441,6 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"escalation_name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"duration": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"vote_tag": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"vote_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
 			"condition": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -342,7 +448,7 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"created_at": &schema.Schema{
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -357,6 +463,35 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 
 			// DEBUG INFO
 			"variable": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"duration": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"vote_tag": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"vote_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -438,6 +573,7 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			"alert_spec": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -511,6 +647,13 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"escalation_name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"file": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -518,7 +661,15 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"threshold": &schema.Schema{
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -532,7 +683,7 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"name": &schema.Schema{
+			"threshold": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -545,10 +696,15 @@ func resourceRightScaleAlertSpecCreate(d *schema.ResourceData, meta interface{})
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("alert_spec"); ok {
-		params["alert_spec"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("alert_spec", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("AlertSpec", "create", "/api/clouds/%s/instances/%s/alert_specs", params)
@@ -575,19 +731,61 @@ func resourceRightScaleAlertSpecCreate(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleAlertSpecRead(d, meta)
-	return nil
+	return resourceRightScaleAlertSpecRead(d, meta)
 }
 func resourceRightScaleAlertSpecDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleAlertSpecRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("AlertSpec", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("AlertSpec Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("AlertSpec Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AlertSpec HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("AlertSpec Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AlertSpec Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("AlertSpec Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleAlertSpecUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -641,6 +839,43 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 		Update: resourceRightScaleAuditEntryUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"detail_size": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"summary": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO Created for key audit_entry. -- Submatch: ["audit_entry[auditee_href]" "audit_entry" "auditee_href"] at idx 0 -- cmdFlagName: audit_entry[auditee_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at audit_entry because temp_attr wasn't null, which it never will be
@@ -660,6 +895,7 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 			"audit_entry": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -708,43 +944,6 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"detail_size": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"summary": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -753,18 +952,23 @@ func resourceRightScaleAuditEntryCreate(d *schema.ResourceData, meta interface{}
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("audit_entry"); ok {
-		params["audit_entry"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("audit_entry", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("user_email"); ok {
-		params["user_email"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("user_email", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("notify"); ok {
-		params["notify"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("notify", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("AuditEntry", "create", "/api/audit_entries", params)
@@ -791,16 +995,58 @@ func resourceRightScaleAuditEntryCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleAuditEntryRead(d, meta)
-	return nil
+	return resourceRightScaleAuditEntryRead(d, meta)
 }
 
 func resourceRightScaleAuditEntryRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("AuditEntry", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("AuditEntry Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("AuditEntry Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AuditEntry HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("AuditEntry Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("AuditEntry Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("AuditEntry Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleAuditEntryUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -863,6 +1109,13 @@ func resourceRightScaleBackup() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -905,6 +1158,7 @@ func resourceRightScaleBackup() *schema.Resource {
 			"backup": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -963,13 +1217,6 @@ func resourceRightScaleBackup() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -978,10 +1225,15 @@ func resourceRightScaleBackupCreate(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("backup"); ok {
-		params["backup"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("backup", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Backup", "create", "/api/backups", params)
@@ -1008,19 +1260,61 @@ func resourceRightScaleBackupCreate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleBackupRead(d, meta)
-	return nil
+	return resourceRightScaleBackupRead(d, meta)
 }
 func resourceRightScaleBackupDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleBackupRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Backup", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Backup Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Backup Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Backup HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Backup Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Backup Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Backup Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleBackupUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -1068,6 +1362,7 @@ func resourceRightScaleChildAccount() *schema.Resource {
 			"child_account": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -1093,10 +1388,15 @@ func resourceRightScaleChildAccountCreate(d *schema.ResourceData, meta interface
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("child_account"); ok {
-		params["child_account"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("child_account", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("ChildAccount", "create", "/api/child_accounts", params)
@@ -1123,12 +1423,12 @@ func resourceRightScaleChildAccountCreate(d *schema.ResourceData, meta interface
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleChildAccountRead(d, meta)
 	return nil
 }
 
@@ -1153,6 +1453,13 @@ func resourceRightScaleCloud() *schema.Resource {
 		Read: resourceRightScaleCloudRead,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO
 			"display_name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -1189,18 +1496,53 @@ func resourceRightScaleCloud() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
 
 func resourceRightScaleCloudRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Cloud", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Cloud Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Cloud Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Cloud HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Cloud Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Cloud Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Cloud Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -1272,6 +1614,7 @@ func resourceRightScaleCloudAccount() *schema.Resource {
 			"cloud_account": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -1304,10 +1647,15 @@ func resourceRightScaleCloudAccountCreate(d *schema.ResourceData, meta interface
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("cloud_account"); ok {
-		params["cloud_account"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("cloud_account", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("CloudAccount", "create", "/api/cloud_accounts", params)
@@ -1334,19 +1682,61 @@ func resourceRightScaleCloudAccountCreate(d *schema.ResourceData, meta interface
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleCloudAccountRead(d, meta)
-	return nil
+	return resourceRightScaleCloudAccountRead(d, meta)
 }
 func resourceRightScaleCloudAccountDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleCloudAccountRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("CloudAccount", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("CloudAccount Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("CloudAccount Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("CloudAccount HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("CloudAccount Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("CloudAccount Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("CloudAccount Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -1394,8 +1784,16 @@ func resourceRightScaleCookbook() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"id": &schema.Schema{
-				Type:     schema.TypeInt,
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"metadata": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
@@ -1415,6 +1813,20 @@ func resourceRightScaleCookbook() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"source_info_summary": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -1423,6 +1835,13 @@ func resourceRightScaleCookbook() *schema.Resource {
 
 			// DEBUG INFO
 			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -1444,36 +1863,7 @@ func resourceRightScaleCookbook() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"download_url": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"metadata": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -1487,6 +1877,48 @@ func resourceRightScaleCookbookDelete(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceRightScaleCookbookRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Cookbook", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Cookbook Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Cookbook Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Cookbook HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Cookbook Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Cookbook Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Cookbook Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -1547,6 +1979,7 @@ func resourceRightScaleCookbookAttachment() *schema.Resource {
 			"cookbook_attachment": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -1603,10 +2036,15 @@ func resourceRightScaleCookbookAttachmentCreate(d *schema.ResourceData, meta int
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("cookbook_attachment"); ok {
-		params["cookbook_attachment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("cookbook_attachment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("CookbookAttachment", "create", "/api/cookbooks/%s/cookbook_attachments", params)
@@ -1633,19 +2071,61 @@ func resourceRightScaleCookbookAttachmentCreate(d *schema.ResourceData, meta int
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleCookbookAttachmentRead(d, meta)
-	return nil
+	return resourceRightScaleCookbookAttachmentRead(d, meta)
 }
 func resourceRightScaleCookbookAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleCookbookAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("CookbookAttachment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("CookbookAttachment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("CookbookAttachment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("CookbookAttachment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("CookbookAttachment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("CookbookAttachment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("CookbookAttachment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -1692,6 +2172,13 @@ func resourceRightScaleCredential() *schema.Resource {
 		Update: resourceRightScaleCredentialUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"value": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO Created for key credential. -- Submatch: ["credential[description]" "credential" "description"] at idx 0 -- cmdFlagName: credential[description] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at credential because temp_attr wasn't null, which it never will be
@@ -1716,6 +2203,7 @@ func resourceRightScaleCredential() *schema.Resource {
 			"credential": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -1775,13 +2263,6 @@ func resourceRightScaleCredential() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"value": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -1790,10 +2271,15 @@ func resourceRightScaleCredentialCreate(d *schema.ResourceData, meta interface{}
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("credential"); ok {
-		params["credential"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("credential", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Credential", "create", "/api/credentials", params)
@@ -1820,19 +2306,61 @@ func resourceRightScaleCredentialCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleCredentialRead(d, meta)
-	return nil
+	return resourceRightScaleCredentialRead(d, meta)
 }
 func resourceRightScaleCredentialDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleCredentialRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Credential", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Credential Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Credential Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Credential HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Credential Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Credential Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Credential Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleCredentialUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -1856,6 +2384,14 @@ func resourceRightScaleDatacenter() *schema.Resource {
 		Read: resourceRightScaleDatacenterRead,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
 			// DEBUG INFO
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
@@ -1884,19 +2420,53 @@ func resourceRightScaleDatacenter() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
 		},
 	}
 }
 
 func resourceRightScaleDatacenterRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Datacenter", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Datacenter Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Datacenter Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Datacenter HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Datacenter Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Datacenter Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Datacenter Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -1968,6 +2538,14 @@ func resourceRightScaleDeployment() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"inputs": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -2018,8 +2596,13 @@ func resourceRightScaleDeployment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at deployment because temp_attr wasn't null, which it never will be
 			"deployment": &schema.Schema{
-				Type:     schema.TypeMap,
+				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
+				Set: func(v interface{}) int {
+					// there can be only one deployment element; no need to hash anything
+					return 0
+				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -2032,7 +2615,7 @@ func resourceRightScaleDeployment() *schema.Resource {
 						// Assigned inside of last subMatch but child name didn't match parent name
 						"name": &schema.Schema{
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						// DEBUG INFO %!s(MISSING)
 						// Assigned inside of last subMatch but child name didn't match parent name
@@ -2058,26 +2641,28 @@ func resourceRightScaleDeployment() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"inputs": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
 		},
 	}
+}
+
+func deploymentSchemaToMap(d *schema.ResourceData) map[string]interface{} {
+	param_map := make(map[string]interface{})
+
+	if val, ok := d.GetOk("deployment"); ok {
+		recursiveSchemaSetValueGet("deployment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	return param_map
 }
 
 func resourceRightScaleDeploymentCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := deploymentSchemaToMap(d)
 
-	if val, ok := d.GetOk("deployment"); ok {
-		params["deployment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Deployment", "create", "/api/deployments", params)
@@ -2104,19 +2689,79 @@ func resourceRightScaleDeploymentCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleDeploymentRead(d, meta)
-	return nil
+	return resourceRightScaleDeploymentRead(d, meta)
 }
 func resourceRightScaleDeploymentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleDeploymentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+	param_map := deploymentSchemaToMap(d)
+
+	log.Printf("[DEBUG] Just using param_map %d", len(param_map))
+
+	deplSet := d.Get("deployment").(*schema.Set)
+	log.Printf("[DEBUG] the deployment set has %d elements, and it is %q", len(deplSet.List()), deplSet.List()[0])
+
+
+	req, err := client.BuildRequest("Deployment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Deployment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Deployment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Deployment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Deployment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Deployment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Deployment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+		//res_map := resource.(map[string]interface{})
+		forDeplSetMap := make(map[string]interface{})
+		subMap := make(map[string]interface{})
+		forDeplSetMap["deployment"] = subMap
+		subMap["name"] = "foobar"//res_map["name"]
+		deplSet := d.Get("deployment").(*schema.Set)
+		//deplSet.Remove(deplSet.List()[0])
+		deplSet.Add(forDeplSetMap)
+		//depl := deplSet.List()[0].(*schema.ResourceData)
+		//d.Set("deployment", res_map["deployment"])
+		d.Set("deployment", deplSet)
+	}
 	return nil
 }
 
@@ -2201,6 +2846,48 @@ func resourceRightScaleIdentityProvider() *schema.Resource {
 }
 
 func resourceRightScaleIdentityProviderRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("IdentityProvider", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("IdentityProvider Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("IdentityProvider Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IdentityProvider HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("IdentityProvider Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IdentityProvider Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("IdentityProvider Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -2229,14 +2916,43 @@ func resourceRightScaleImage() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"os_platform": &schema.Schema{
+			"root_device_storage": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
 			// DEBUG INFO
-			"root_device_storage": &schema.Schema{
+			"visibility": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"image_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -2258,27 +2974,6 @@ func resourceRightScaleImage() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"image_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"visibility": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"cpu_architecture": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -2286,15 +2981,7 @@ func resourceRightScaleImage() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
+			"os_platform": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -2304,6 +2991,48 @@ func resourceRightScaleImage() *schema.Resource {
 }
 
 func resourceRightScaleImageRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Image", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Image Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Image Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Image HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Image Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Image Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Image Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -2323,14 +3052,14 @@ func resourceRightScaleInput() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"value": &schema.Schema{
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
 			// DEBUG INFO
-			"name": &schema.Schema{
+			"value": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -2434,19 +3163,33 @@ func resourceRightScaleInstance() *schema.Resource {
 		Update: resourceRightScaleInstanceUpdate,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO Created for key api_behavior. -- Submatch: ["api_behavior" "api_behavior" ""] at idx 0 -- cmdFlagName: api_behavior -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at api_behavior because temp_attr wasn't null, which it never will be
-			"api_behavior": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-
 			// DEBUG INFO
-			"admin_password": &schema.Schema{
+			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+			},
+
+			// DEBUG INFO
+			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"inherited_sources": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"inputs": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
@@ -2457,14 +3200,7 @@ func resourceRightScaleInstance() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"monitoring_server": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"os_platform": &schema.Schema{
+			"pricing_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -2475,6 +3211,73 @@ func resourceRightScaleInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+			},
+
+			// DEBUG INFO
+			"terminated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"security_groups": &schema.Schema{
+				Type:     schema.TypeList, //[]SecurityGroup,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO Created for key api_behavior. -- Submatch: ["api_behavior" "api_behavior" ""] at idx 0 -- cmdFlagName: api_behavior -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at api_behavior because temp_attr wasn't null, which it never will be
+			"api_behavior": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"admin_password": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"locked": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"monitoring_collector_http": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"monitoring_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"private_ip_addresses": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was instance -- Submatch: ["instance[subnet_hrefs]" "instance" "subnet_hrefs"] at idx 0 -- Operating at root: true
@@ -2586,6 +3389,7 @@ func resourceRightScaleInstance() *schema.Resource {
 			"instance": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -2638,6 +3442,7 @@ func resourceRightScaleInstance() *schema.Resource {
 						"cloud_specific_attributes": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
@@ -2908,7 +3713,44 @@ func resourceRightScaleInstance() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"private_ip_addresses": &schema.Schema{
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"monitoring_server": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"os_platform": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"subnets": &schema.Schema{
+				Type:     schema.TypeList, //[]Subnet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"private_dns_names": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
@@ -2937,117 +3779,6 @@ func resourceRightScaleInstance() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"monitoring_collector_http": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"pricing_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"private_dns_names": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"inherited_sources": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"inputs": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"locked": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"monitoring_id": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"security_groups": &schema.Schema{
-				Type:     schema.TypeList, //[]SecurityGroup,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"subnets": &schema.Schema{
-				Type:     schema.TypeList, //[]Subnet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"terminated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -3056,14 +3787,19 @@ func resourceRightScaleInstanceCreate(d *schema.ResourceData, meta interface{}) 
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("api_behavior"); ok {
-		params["api_behavior"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("api_behavior", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("instance"); ok {
-		params["instance"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("instance", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Instance", "create", "/api/clouds/%s/instances", params)
@@ -3090,16 +3826,58 @@ func resourceRightScaleInstanceCreate(d *schema.ResourceData, meta interface{}) 
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleInstanceRead(d, meta)
-	return nil
+	return resourceRightScaleInstanceRead(d, meta)
 }
 
 func resourceRightScaleInstanceRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Instance", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Instance Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Instance Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Instance HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Instance Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Instance Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Instance Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -3125,48 +3903,6 @@ func resourceRightScaleInstanceType() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"cpu_count": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"memory": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"local_disks": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -3189,6 +3925,34 @@ func resourceRightScaleInstanceType() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"local_disks": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"cpu_count": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -3202,11 +3966,67 @@ func resourceRightScaleInstanceType() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"memory": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceRightScaleInstanceTypeRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("InstanceType", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("InstanceType Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("InstanceType Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("InstanceType HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("InstanceType Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("InstanceType Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("InstanceType Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -3254,66 +4074,6 @@ func resourceRightScaleIpAddress() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO Created for key ip_address. -- Submatch: ["ip_address[deployment_href]" "ip_address" "deployment_href"] at idx 0 -- cmdFlagName: ip_address[deployment_href] -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[network_href]" "ip_address" "network_href"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[domain]" "ip_address" "domain"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[name]" "ip_address" "name"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[deployment_href]" "ip_address" "deployment_href"] at idx 0 -- Operating at root: true
-			// Found deployment_href as a child key in the last subMatchIdx branch
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[name]" "ip_address" "name"] at idx 0 -- Operating at root: true
-			// Found name as a child key in the last subMatchIdx branch
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
-			"ip_address": &schema.Schema{
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"domain": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
-
-			// DEBUG INFO
 			"address": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -3348,6 +4108,67 @@ func resourceRightScaleIpAddress() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO Created for key ip_address. -- Submatch: ["ip_address[deployment_href]" "ip_address" "deployment_href"] at idx 0 -- cmdFlagName: ip_address[deployment_href] -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[network_href]" "ip_address" "network_href"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[domain]" "ip_address" "domain"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[name]" "ip_address" "name"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[deployment_href]" "ip_address" "deployment_href"] at idx 0 -- Operating at root: true
+			// Found deployment_href as a child key in the last subMatchIdx branch
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			// Discovered at key ip_address of parent map and updating -- Submatch: ["ip_address[name]" "ip_address" "name"] at idx 0 -- Operating at root: true
+			// Found name as a child key in the last subMatchIdx branch
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
+			"ip_address": &schema.Schema{
+				Type:     schema.TypeSet,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"deployment_href": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"domain": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"network_href": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -3356,10 +4177,15 @@ func resourceRightScaleIpAddressCreate(d *schema.ResourceData, meta interface{})
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ip_address"); ok {
-		params["ip_address"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("ip_address", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("IpAddress", "create", "/api/clouds/%s/ip_addresses", params)
@@ -3386,19 +4212,61 @@ func resourceRightScaleIpAddressCreate(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleIpAddressRead(d, meta)
-	return nil
+	return resourceRightScaleIpAddressRead(d, meta)
 }
 func resourceRightScaleIpAddressDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleIpAddressRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("IpAddress", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("IpAddress Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("IpAddress Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IpAddress HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("IpAddress Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IpAddress Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("IpAddress Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleIpAddressUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -3441,35 +4309,6 @@ func resourceRightScaleIpAddressBinding() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"private_port": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"protocol": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"public_port": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"recurring": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -3494,6 +4333,7 @@ func resourceRightScaleIpAddressBinding() *schema.Resource {
 			"ip_address_binding": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -3537,6 +4377,35 @@ func resourceRightScaleIpAddressBinding() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"private_port": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"protocol": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"public_port": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -3545,10 +4414,15 @@ func resourceRightScaleIpAddressBindingCreate(d *schema.ResourceData, meta inter
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ip_address_binding"); ok {
-		params["ip_address_binding"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("ip_address_binding", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("IpAddressBinding", "create", "/api/clouds/%s/ip_addresses/%s/ip_address_bindings", params)
@@ -3575,19 +4449,61 @@ func resourceRightScaleIpAddressBindingCreate(d *schema.ResourceData, meta inter
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleIpAddressBindingRead(d, meta)
-	return nil
+	return resourceRightScaleIpAddressBindingRead(d, meta)
 }
 func resourceRightScaleIpAddressBindingDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleIpAddressBindingRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("IpAddressBinding", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("IpAddressBinding Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("IpAddressBinding Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IpAddressBinding HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("IpAddressBinding Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("IpAddressBinding Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("IpAddressBinding Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -3615,6 +4531,20 @@ func resourceRightScaleMonitoringMetric() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"plugin": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"view": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -3636,25 +4566,53 @@ func resourceRightScaleMonitoringMetric() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
-
-			// DEBUG INFO
-			"plugin": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"view": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
 
 func resourceRightScaleMonitoringMetricRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("MonitoringMetric", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("MonitoringMetric Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("MonitoringMetric Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MonitoringMetric HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("MonitoringMetric Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MonitoringMetric Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("MonitoringMetric Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -3715,6 +4673,42 @@ func resourceRightScaleMultiCloudImage() *schema.Resource {
 		Update: resourceRightScaleMultiCloudImageUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO Created for key multi_cloud_image. -- Submatch: ["multi_cloud_image[description]" "multi_cloud_image" "description"] at idx 0 -- cmdFlagName: multi_cloud_image[description] -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
+			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[name]" "multi_cloud_image" "name"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
+			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[description]" "multi_cloud_image" "description"] at idx 0 -- Operating at root: true
+			// Found description as a child key in the last subMatchIdx branch
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
+			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[name]" "multi_cloud_image" "name"] at idx 0 -- Operating at root: true
+			// Found name as a child key in the last subMatchIdx branch
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
+			"multi_cloud_image": &schema.Schema{
+				Type:     schema.TypeSet,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"description": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+
 			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
@@ -3751,41 +4745,6 @@ func resourceRightScaleMultiCloudImage() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO Created for key multi_cloud_image. -- Submatch: ["multi_cloud_image[description]" "multi_cloud_image" "description"] at idx 0 -- cmdFlagName: multi_cloud_image[description] -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
-			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[name]" "multi_cloud_image" "name"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
-			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[description]" "multi_cloud_image" "description"] at idx 0 -- Operating at root: true
-			// Found description as a child key in the last subMatchIdx branch
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
-			// Discovered at key multi_cloud_image of parent map and updating -- Submatch: ["multi_cloud_image[name]" "multi_cloud_image" "name"] at idx 0 -- Operating at root: true
-			// Found name as a child key in the last subMatchIdx branch
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
-			"multi_cloud_image": &schema.Schema{
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -3794,10 +4753,15 @@ func resourceRightScaleMultiCloudImageCreate(d *schema.ResourceData, meta interf
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("multi_cloud_image"); ok {
-		params["multi_cloud_image"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("multi_cloud_image", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("MultiCloudImage", "create", "/api/server_templates/%s/multi_cloud_images", params)
@@ -3824,19 +4788,61 @@ func resourceRightScaleMultiCloudImageCreate(d *schema.ResourceData, meta interf
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleMultiCloudImageRead(d, meta)
-	return nil
+	return resourceRightScaleMultiCloudImageRead(d, meta)
 }
 func resourceRightScaleMultiCloudImageDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleMultiCloudImageRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("MultiCloudImage", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("MultiCloudImage Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("MultiCloudImage Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MultiCloudImage HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("MultiCloudImage Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MultiCloudImage Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("MultiCloudImage Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleMultiCloudImageUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -3886,14 +4892,6 @@ func resourceRightScaleMultiCloudImageSetting() *schema.Resource {
 		Update: resourceRightScaleMultiCloudImageSettingUpdate,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
 			// DEBUG INFO Created for key multi_cloud_image_setting. -- Submatch: ["multi_cloud_image_setting[instance_type_href]" "multi_cloud_image_setting" "instance_type_href"] at idx 0 -- cmdFlagName: multi_cloud_image_setting[instance_type_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at multi_cloud_image_setting because temp_attr wasn't null, which it never will be
@@ -3939,6 +4937,7 @@ func resourceRightScaleMultiCloudImageSetting() *schema.Resource {
 			"multi_cloud_image_setting": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -3988,6 +4987,14 @@ func resourceRightScaleMultiCloudImageSetting() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
 		},
 	}
 }
@@ -3996,10 +5003,15 @@ func resourceRightScaleMultiCloudImageSettingCreate(d *schema.ResourceData, meta
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("multi_cloud_image_setting"); ok {
-		params["multi_cloud_image_setting"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("multi_cloud_image_setting", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("MultiCloudImageSetting", "create", "/api/multi_cloud_images/%s/settings", params)
@@ -4026,19 +5038,61 @@ func resourceRightScaleMultiCloudImageSettingCreate(d *schema.ResourceData, meta
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleMultiCloudImageSettingRead(d, meta)
-	return nil
+	return resourceRightScaleMultiCloudImageSettingRead(d, meta)
 }
 func resourceRightScaleMultiCloudImageSettingDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleMultiCloudImageSettingRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("MultiCloudImageSetting", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("MultiCloudImageSetting Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("MultiCloudImageSetting Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MultiCloudImageSetting HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("MultiCloudImageSetting Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("MultiCloudImageSetting Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("MultiCloudImageSetting Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleMultiCloudImageSettingUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -4089,21 +5143,37 @@ func resourceRightScaleNetwork() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"cidr_block": &schema.Schema{
-				Type:     schema.TypeString,
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"is_default": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
 
 			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
 			"instance_tenancy": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -4145,6 +5215,7 @@ func resourceRightScaleNetwork() *schema.Resource {
 			"network": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -4188,30 +5259,14 @@ func resourceRightScaleNetwork() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"is_default": &schema.Schema{
-				Type:     schema.TypeBool,
+			"cidr_block": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"name": &schema.Schema{
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -4224,10 +5279,15 @@ func resourceRightScaleNetworkCreate(d *schema.ResourceData, meta interface{}) e
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network"); ok {
-		params["network"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("network", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Network", "create", "/api/networks", params)
@@ -4254,19 +5314,61 @@ func resourceRightScaleNetworkCreate(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleNetworkRead(d, meta)
-	return nil
+	return resourceRightScaleNetworkRead(d, meta)
 }
 func resourceRightScaleNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleNetworkRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Network", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Network Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Network Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Network HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Network Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Network Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Network Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -4317,40 +5419,10 @@ func resourceRightScaleNetworkGateway() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"name": &schema.Schema{
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
@@ -4361,10 +5433,11 @@ func resourceRightScaleNetworkGateway() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"state": &schema.Schema{
-				Type:     schema.TypeString,
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
@@ -4400,6 +5473,7 @@ func resourceRightScaleNetworkGateway() *schema.Resource {
 			"network_gateway": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -4437,7 +5511,36 @@ func resourceRightScaleNetworkGateway() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"created_at": &schema.Schema{
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -4450,10 +5553,15 @@ func resourceRightScaleNetworkGatewayCreate(d *schema.ResourceData, meta interfa
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_gateway"); ok {
-		params["network_gateway"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("network_gateway", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("NetworkGateway", "create", "/api/network_gateways", params)
@@ -4480,19 +5588,61 @@ func resourceRightScaleNetworkGatewayCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleNetworkGatewayRead(d, meta)
-	return nil
+	return resourceRightScaleNetworkGatewayRead(d, meta)
 }
 func resourceRightScaleNetworkGatewayDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleNetworkGatewayRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("NetworkGateway", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("NetworkGateway Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("NetworkGateway Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkGateway HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("NetworkGateway Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkGateway Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("NetworkGateway Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleNetworkGatewayUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -4542,6 +5692,13 @@ func resourceRightScaleNetworkOptionGroup() *schema.Resource {
 		Update: resourceRightScaleNetworkOptionGroupUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"options": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO Created for key network_option_group. -- Submatch: ["network_option_group[description]" "network_option_group" "description"] at idx 0 -- cmdFlagName: network_option_group[description] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network_option_group because temp_attr wasn't null, which it never will be
@@ -4572,6 +5729,7 @@ func resourceRightScaleNetworkOptionGroup() *schema.Resource {
 			"network_option_group": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -4616,37 +5774,7 @@ func resourceRightScaleNetworkOptionGroup() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"options": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -4672,6 +5800,29 @@ func resourceRightScaleNetworkOptionGroup() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
 		},
 	}
 }
@@ -4680,10 +5831,15 @@ func resourceRightScaleNetworkOptionGroupCreate(d *schema.ResourceData, meta int
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_option_group"); ok {
-		params["network_option_group"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("network_option_group", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("NetworkOptionGroup", "create", "/api/network_option_groups", params)
@@ -4710,19 +5866,61 @@ func resourceRightScaleNetworkOptionGroupCreate(d *schema.ResourceData, meta int
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleNetworkOptionGroupRead(d, meta)
-	return nil
+	return resourceRightScaleNetworkOptionGroupRead(d, meta)
 }
 func resourceRightScaleNetworkOptionGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleNetworkOptionGroupRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("NetworkOptionGroup", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("NetworkOptionGroup Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("NetworkOptionGroup Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkOptionGroup HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("NetworkOptionGroup Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkOptionGroup Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("NetworkOptionGroup Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleNetworkOptionGroupUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -4772,6 +5970,35 @@ func resourceRightScaleNetworkOptionGroupAttachment() *schema.Resource {
 		Update: resourceRightScaleNetworkOptionGroupAttachmentUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"network_option_group": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO Created for key network_option_group_attachment. -- Submatch: ["network_option_group_attachment[network_option_group_href]" "network_option_group_attachment" "network_option_group_href"] at idx 0 -- cmdFlagName: network_option_group_attachment[network_option_group_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network_option_group_attachment because temp_attr wasn't null, which it never will be
@@ -4785,6 +6012,7 @@ func resourceRightScaleNetworkOptionGroupAttachment() *schema.Resource {
 			"network_option_group_attachment": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -4817,35 +6045,6 @@ func resourceRightScaleNetworkOptionGroupAttachment() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"network_option_group": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -4854,10 +6053,15 @@ func resourceRightScaleNetworkOptionGroupAttachmentCreate(d *schema.ResourceData
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_option_group_attachment"); ok {
-		params["network_option_group_attachment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("network_option_group_attachment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("NetworkOptionGroupAttachment", "create", "/api/network_option_group_attachments", params)
@@ -4884,19 +6088,61 @@ func resourceRightScaleNetworkOptionGroupAttachmentCreate(d *schema.ResourceData
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleNetworkOptionGroupAttachmentRead(d, meta)
-	return nil
+	return resourceRightScaleNetworkOptionGroupAttachmentRead(d, meta)
 }
 func resourceRightScaleNetworkOptionGroupAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleNetworkOptionGroupAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("NetworkOptionGroupAttachment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("NetworkOptionGroupAttachment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("NetworkOptionGroupAttachment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkOptionGroupAttachment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("NetworkOptionGroupAttachment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("NetworkOptionGroupAttachment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("NetworkOptionGroupAttachment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleNetworkOptionGroupAttachmentUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -4915,6 +6161,24 @@ func resourceRightScaleOauth2() *schema.Resource {
 		Create: resourceRightScaleOauth2Create,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO Created for key right_link_version. -- Submatch: ["right_link_version" "right_link_version" ""] at idx 0 -- cmdFlagName: right_link_version -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at right_link_version because temp_attr wasn't null, which it never will be
+			"right_link_version": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			// DEBUG INFO Created for key client_secret. -- Submatch: ["client_secret" "client_secret" ""] at idx 0 -- cmdFlagName: client_secret -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at client_secret because temp_attr wasn't null, which it never will be
+			"client_secret": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			// DEBUG INFO Created for key refresh_token. -- Submatch: ["refresh_token" "refresh_token" ""] at idx 0 -- cmdFlagName: refresh_token -- Operating at root: true
 			// Matched at subMatch[2] == '' -- Operating at root: true
 			// Assigned to parent map at refresh_token because temp_attr wasn't null, which it never will be
@@ -4959,24 +6223,6 @@ func resourceRightScaleOauth2() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-
-			// DEBUG INFO Created for key right_link_version. -- Submatch: ["right_link_version" "right_link_version" ""] at idx 0 -- cmdFlagName: right_link_version -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at right_link_version because temp_attr wasn't null, which it never will be
-			"right_link_version": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-
-			// DEBUG INFO Created for key client_secret. -- Submatch: ["client_secret" "client_secret" ""] at idx 0 -- cmdFlagName: client_secret -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at client_secret because temp_attr wasn't null, which it never will be
-			"client_secret": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
 		},
 	}
 }
@@ -4985,34 +6231,39 @@ func resourceRightScaleOauth2Create(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
-	if val, ok := d.GetOk("refresh_token"); ok {
-		params["refresh_token"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
-	}
-	if val, ok := d.GetOk("r_s_version"); ok {
-		params["r_s_version"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
-	}
-	if val, ok := d.GetOk("grant_type"); ok {
-		params["grant_type"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
-	}
-	if val, ok := d.GetOk("account_id"); ok {
-		params["account_id"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
-	}
-	if val, ok := d.GetOk("client_id"); ok {
-		params["client_id"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
-	}
 	if val, ok := d.GetOk("right_link_version"); ok {
-		params["right_link_version"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("right_link_version", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("client_secret"); ok {
-		params["client_secret"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("client_secret", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("refresh_token"); ok {
+		recursiveSchemaSetValueGet("refresh_token", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("r_s_version"); ok {
+		recursiveSchemaSetValueGet("r_s_version", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("grant_type"); ok {
+		recursiveSchemaSetValueGet("grant_type", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("account_id"); ok {
+		recursiveSchemaSetValueGet("account_id", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("client_id"); ok {
+		recursiveSchemaSetValueGet("client_id", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Oauth2", "create", "/api/oauth2/", params)
@@ -5039,12 +6290,12 @@ func resourceRightScaleOauth2Create(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleOauth2Read(d, meta)
 	return nil
 }
 
@@ -5083,6 +6334,21 @@ func resourceRightScalePermission() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"deleted_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -5113,6 +6379,7 @@ func resourceRightScalePermission() *schema.Resource {
 			"permission": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -5131,21 +6398,6 @@ func resourceRightScalePermission() *schema.Resource {
 				},
 				ForceNew: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -5154,10 +6406,15 @@ func resourceRightScalePermissionCreate(d *schema.ResourceData, meta interface{}
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("permission"); ok {
-		params["permission"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("permission", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Permission", "create", "/api/permissions", params)
@@ -5184,19 +6441,61 @@ func resourceRightScalePermissionCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScalePermissionRead(d, meta)
-	return nil
+	return resourceRightScalePermissionRead(d, meta)
 }
 func resourceRightScalePermissionDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScalePermissionRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Permission", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Permission Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Permission Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Permission HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Permission Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Permission Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Permission Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -5235,6 +6534,14 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -5242,14 +6549,15 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
-			"updated_at": &schema.Schema{
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5267,6 +6575,7 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 			"placement_group": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -5300,15 +6609,7 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5322,11 +6623,10 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 		},
 	}
@@ -5336,10 +6636,15 @@ func resourceRightScalePlacementGroupCreate(d *schema.ResourceData, meta interfa
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("placement_group"); ok {
-		params["placement_group"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("placement_group", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("PlacementGroup", "create", "/api/placement_groups", params)
@@ -5366,19 +6671,61 @@ func resourceRightScalePlacementGroupCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScalePlacementGroupRead(d, meta)
-	return nil
+	return resourceRightScalePlacementGroupRead(d, meta)
 }
 func resourceRightScalePlacementGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScalePlacementGroupRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("PlacementGroup", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("PlacementGroup Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("PlacementGroup Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("PlacementGroup HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("PlacementGroup Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("PlacementGroup Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("PlacementGroup Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -5417,6 +6764,40 @@ func resourceRightScalePreference() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO Created for key preference. -- Submatch: ["preference[contents]" "preference" "contents"] at idx 0 -- cmdFlagName: preference[contents] -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at preference because temp_attr wasn't null, which it never will be
+			"preference": &schema.Schema{
+				Type:     schema.TypeSet,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"contents": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"contents": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -5437,39 +6818,6 @@ func resourceRightScalePreference() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO Created for key preference. -- Submatch: ["preference[contents]" "preference" "contents"] at idx 0 -- cmdFlagName: preference[contents] -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at preference because temp_attr wasn't null, which it never will be
-			"preference": &schema.Schema{
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"contents": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
 		},
 	}
 }
@@ -5479,6 +6827,48 @@ func resourceRightScalePreferenceDelete(d *schema.ResourceData, meta interface{}
 }
 
 func resourceRightScalePreferenceRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Preference", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Preference Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Preference Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Preference HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Preference Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Preference Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Preference Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScalePreferenceUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -5509,7 +6899,15 @@ func resourceRightScalePublication() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"created_at": &schema.Schema{
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"commit_message": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5523,7 +6921,7 @@ func resourceRightScalePublication() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"name": &schema.Schema{
+			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5537,7 +6935,7 @@ func resourceRightScalePublication() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"commit_message": &schema.Schema{
+			"revision_notes": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5545,6 +6943,13 @@ func resourceRightScalePublication() *schema.Resource {
 
 			// DEBUG INFO
 			"content_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5559,38 +6964,65 @@ func resourceRightScalePublication() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"publisher": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-			},
-
-			// DEBUG INFO
-			"revision_notes": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 		},
 	}
 }
 
 func resourceRightScalePublicationRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Publication", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Publication Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Publication Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Publication HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Publication Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Publication Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Publication Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -5614,20 +7046,6 @@ func resourceRightScalePublicationLineage() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"comments_emailed": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"comments_enabled": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -5642,8 +7060,15 @@ func resourceRightScalePublicationLineage() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
+			"comments_emailed": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"comments_enabled": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 				Computed: true,
 			},
@@ -5669,11 +7094,60 @@ func resourceRightScalePublicationLineage() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceRightScalePublicationLineageRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("PublicationLineage", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("PublicationLineage Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("PublicationLineage Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("PublicationLineage HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("PublicationLineage Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("PublicationLineage Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("PublicationLineage Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -5736,7 +7210,14 @@ func resourceRightScaleRecurringVolumeAttachment() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"runnable_type": &schema.Schema{
+			"size": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5751,13 +7232,6 @@ func resourceRightScaleRecurringVolumeAttachment() *schema.Resource {
 
 			// DEBUG INFO
 			"storage_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5781,6 +7255,7 @@ func resourceRightScaleRecurringVolumeAttachment() *schema.Resource {
 			"recurring_volume_attachment": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -5841,7 +7316,7 @@ func resourceRightScaleRecurringVolumeAttachment() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"size": &schema.Schema{
+			"runnable_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -5854,10 +7329,15 @@ func resourceRightScaleRecurringVolumeAttachmentCreate(d *schema.ResourceData, m
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("recurring_volume_attachment"); ok {
-		params["recurring_volume_attachment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("recurring_volume_attachment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("RecurringVolumeAttachment", "create", "/api/clouds/%s/recurring_volume_attachments", params)
@@ -5884,19 +7364,61 @@ func resourceRightScaleRecurringVolumeAttachmentCreate(d *schema.ResourceData, m
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRecurringVolumeAttachmentRead(d, meta)
-	return nil
+	return resourceRightScaleRecurringVolumeAttachmentRead(d, meta)
 }
 func resourceRightScaleRecurringVolumeAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRecurringVolumeAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RecurringVolumeAttachment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RecurringVolumeAttachment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RecurringVolumeAttachment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RecurringVolumeAttachment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RecurringVolumeAttachment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RecurringVolumeAttachment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RecurringVolumeAttachment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -6022,6 +7544,7 @@ func resourceRightScaleRepository() *schema.Resource {
 			"repository": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO Child at parent[repository][asset_paths] -- Submatch: ["repository[asset_paths]" "repository" "asset_paths"] at idx 0 -- cmdFlagName: repository[asset_paths][cookbooks][]
@@ -6031,6 +7554,7 @@ func resourceRightScaleRepository() *schema.Resource {
 						"asset_paths": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was cookbooks -- Submatch: ["[cookbooks]" "" "cookbooks"] at idx 1 -- Operating at root: false
@@ -6040,6 +7564,7 @@ func resourceRightScaleRepository() *schema.Resource {
 									"cookbooks": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[cookbooks][cookbooks] -- Submatch: ["[cookbooks]" "" "cookbooks"] at idx 1 -- cmdFlagName: repository[asset_paths][cookbooks][]
@@ -6077,6 +7602,7 @@ func resourceRightScaleRepository() *schema.Resource {
 						"credentials": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key password. -- Submatch: ["[password]" "" "password"] at idx 1 -- cmdFlagName: repository[credentials][password] -- Operating at root: false
@@ -6150,14 +7676,15 @@ func resourceRightScaleRepository() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
-			"updated_at": &schema.Schema{
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -6178,16 +7705,15 @@ func resourceRightScaleRepository() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
+			"read_only": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO
-			"read_only": &schema.Schema{
-				Type:     schema.TypeBool,
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
@@ -6199,10 +7725,15 @@ func resourceRightScaleRepositoryCreate(d *schema.ResourceData, meta interface{}
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("repository"); ok {
-		params["repository"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("repository", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Repository", "create", "/api/repositories", params)
@@ -6229,19 +7760,61 @@ func resourceRightScaleRepositoryCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRepositoryRead(d, meta)
-	return nil
+	return resourceRightScaleRepositoryRead(d, meta)
 }
 func resourceRightScaleRepositoryDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRepositoryRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Repository", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Repository Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Repository Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Repository HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Repository Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Repository Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Repository Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleRepositoryUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -6265,21 +7838,6 @@ func resourceRightScaleRepositoryAsset() *schema.Resource {
 		Read: resourceRightScaleRepositoryAssetRead,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO
 			"id": &schema.Schema{
 				Type:     schema.TypeString,
@@ -6308,11 +7866,68 @@ func resourceRightScaleRepositoryAsset() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceRightScaleRepositoryAssetRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RepositoryAsset", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RepositoryAsset Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RepositoryAsset Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RepositoryAsset HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RepositoryAsset Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RepositoryAsset Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RepositoryAsset Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -6378,29 +7993,7 @@ func resourceRightScaleRightScript() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"inputs": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"lineage": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -6412,20 +8005,6 @@ func resourceRightScaleRightScript() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"revision": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"source": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
 			},
 
 			// DEBUG INFO Created for key right_script. -- Submatch: ["right_script[description]" "right_script" "description"] at idx 0 -- cmdFlagName: right_script[description] -- Operating at root: true
@@ -6452,6 +8031,7 @@ func resourceRightScaleRightScript() *schema.Resource {
 			"right_script": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -6477,7 +8057,43 @@ func resourceRightScaleRightScript() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"inputs": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"lineage": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"revision": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"source": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -6491,7 +8107,7 @@ func resourceRightScaleRightScript() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"id": &schema.Schema{
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -6504,10 +8120,15 @@ func resourceRightScaleRightScriptCreate(d *schema.ResourceData, meta interface{
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("right_script"); ok {
-		params["right_script"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("right_script", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("RightScript", "create", "/api/right_scripts", params)
@@ -6534,19 +8155,61 @@ func resourceRightScaleRightScriptCreate(d *schema.ResourceData, meta interface{
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRightScriptRead(d, meta)
-	return nil
+	return resourceRightScaleRightScriptRead(d, meta)
 }
 func resourceRightScaleRightScriptDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRightScriptRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RightScript", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RightScript Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RightScript Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RightScript HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RightScript Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RightScript Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RightScript Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -6598,6 +8261,49 @@ func resourceRightScaleRightScriptAttachment() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"digest": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"download_url": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"filename": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"size": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -6621,6 +8327,7 @@ func resourceRightScaleRightScriptAttachment() *schema.Resource {
 			"right_script_attachment": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -6645,49 +8352,6 @@ func resourceRightScaleRightScriptAttachment() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"download_url": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"filename": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"size": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"digest": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"id": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -6696,10 +8360,15 @@ func resourceRightScaleRightScriptAttachmentCreate(d *schema.ResourceData, meta 
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("right_script_attachment"); ok {
-		params["right_script_attachment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("right_script_attachment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("RightScriptAttachment", "create", "/api/right_scripts/%s/attachments", params)
@@ -6726,19 +8395,61 @@ func resourceRightScaleRightScriptAttachmentCreate(d *schema.ResourceData, meta 
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRightScriptAttachmentRead(d, meta)
-	return nil
+	return resourceRightScaleRightScriptAttachmentRead(d, meta)
 }
 func resourceRightScaleRightScriptAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRightScriptAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RightScriptAttachment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RightScriptAttachment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RightScriptAttachment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RightScriptAttachment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RightScriptAttachment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RightScriptAttachment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RightScriptAttachment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleRightScriptAttachmentUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -6790,6 +8501,27 @@ func resourceRightScaleRoute() *schema.Resource {
 		Update: resourceRightScaleRouteUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was route -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] at idx 0 -- Operating at root: true
 			// This is a top level attribute.
 			// Discovered at key route of parent map and updating -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] at idx 0 -- Operating at root: true
@@ -6838,6 +8570,7 @@ func resourceRightScaleRoute() *schema.Resource {
 			"route": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO Child at parent[route][cloud_specific_attributes] -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] at idx 0 -- cmdFlagName: route[cloud_specific_attributes][instance_tags][]
@@ -6847,6 +8580,7 @@ func resourceRightScaleRoute() *schema.Resource {
 						"cloud_specific_attributes": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was instance_tags -- Submatch: ["[instance_tags]" "" "instance_tags"] at idx 1 -- Operating at root: false
@@ -6854,6 +8588,7 @@ func resourceRightScaleRoute() *schema.Resource {
 									"instance_tags": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[instance_tags][instance_tags] -- Submatch: ["[instance_tags]" "" "instance_tags"] at idx 1 -- cmdFlagName: route[cloud_specific_attributes][instance_tags][]
@@ -6934,27 +8669,6 @@ func resourceRightScaleRoute() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"state": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -6963,10 +8677,15 @@ func resourceRightScaleRouteCreate(d *schema.ResourceData, meta interface{}) err
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("route"); ok {
-		params["route"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("route", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Route", "create", "/api/routes", params)
@@ -6993,19 +8712,61 @@ func resourceRightScaleRouteCreate(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRouteRead(d, meta)
-	return nil
+	return resourceRightScaleRouteRead(d, meta)
 }
 func resourceRightScaleRouteDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRouteRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Route", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Route Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Route Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Route HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Route Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Route Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Route Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleRouteUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -7055,50 +8816,6 @@ func resourceRightScaleRouteTable() *schema.Resource {
 		Update: resourceRightScaleRouteTableUpdate,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"routes": &schema.Schema{
-				Type:     schema.TypeList, //[]Route,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO Created for key route_table. -- Submatch: ["route_table[network_href]" "route_table" "network_href"] at idx 0 -- cmdFlagName: route_table[network_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at route_table because temp_attr wasn't null, which it never will be
@@ -7122,6 +8839,7 @@ func resourceRightScaleRouteTable() *schema.Resource {
 			"route_table": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -7153,6 +8871,36 @@ func resourceRightScaleRouteTable() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"routes": &schema.Schema{
+				Type:     schema.TypeList, //[]Route,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -7166,6 +8914,20 @@ func resourceRightScaleRouteTable() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -7174,10 +8936,15 @@ func resourceRightScaleRouteTableCreate(d *schema.ResourceData, meta interface{}
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("route_table"); ok {
-		params["route_table"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("route_table", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("RouteTable", "create", "/api/route_tables", params)
@@ -7204,19 +8971,61 @@ func resourceRightScaleRouteTableCreate(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRouteTableRead(d, meta)
-	return nil
+	return resourceRightScaleRouteTableRead(d, meta)
 }
 func resourceRightScaleRouteTableDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRouteTableRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RouteTable", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RouteTable Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RouteTable Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RouteTable HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RouteTable Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RouteTable Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RouteTable Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleRouteTableUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -7264,59 +9073,6 @@ func resourceRightScaleRunnableBinding() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"sequence": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO Created for key runnable_binding. -- Submatch: ["runnable_binding[right_script_href]" "runnable_binding" "right_script_href"] at idx 0 -- cmdFlagName: runnable_binding[right_script_href] -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
-			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[position]" "runnable_binding" "position"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
-			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[sequence]" "runnable_binding" "sequence"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
-			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[recipe]" "runnable_binding" "recipe"] at idx 0 -- Operating at root: true
-			// Matched at subMatchIdx == last -- Operating at root: true
-			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
-			"runnable_binding": &schema.Schema{
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"position": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"recipe": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"right_script_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"sequence": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				ForceNew: true,
-			},
-
-			// DEBUG INFO
 			"actions": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -7352,6 +9108,60 @@ func resourceRightScaleRunnableBinding() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			// DEBUG INFO
+			"sequence": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO Created for key runnable_binding. -- Submatch: ["runnable_binding[right_script_href]" "runnable_binding" "right_script_href"] at idx 0 -- cmdFlagName: runnable_binding[right_script_href] -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
+			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[position]" "runnable_binding" "position"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
+			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[sequence]" "runnable_binding" "sequence"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
+			// Discovered at key runnable_binding of parent map and updating -- Submatch: ["runnable_binding[recipe]" "runnable_binding" "recipe"] at idx 0 -- Operating at root: true
+			// Matched at subMatchIdx == last -- Operating at root: true
+			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
+			"runnable_binding": &schema.Schema{
+				Type:     schema.TypeSet,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"position": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"recipe": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"right_script_href": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						// DEBUG INFO %!s(MISSING)
+						// Assigned inside of last subMatch but child name didn't match parent name
+						"sequence": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -7360,10 +9170,15 @@ func resourceRightScaleRunnableBindingCreate(d *schema.ResourceData, meta interf
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("runnable_binding"); ok {
-		params["runnable_binding"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("runnable_binding", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("RunnableBinding", "create", "/api/server_templates/%s/runnable_bindings", params)
@@ -7390,19 +9205,61 @@ func resourceRightScaleRunnableBindingCreate(d *schema.ResourceData, meta interf
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleRunnableBindingRead(d, meta)
-	return nil
+	return resourceRightScaleRunnableBindingRead(d, meta)
 }
 func resourceRightScaleRunnableBindingDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleRunnableBindingRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("RunnableBinding", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("RunnableBinding Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("RunnableBinding Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RunnableBinding HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("RunnableBinding Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("RunnableBinding Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("RunnableBinding Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -7459,20 +9316,6 @@ func resourceRightScaleSecurityGroup() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"href": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -7506,6 +9349,7 @@ func resourceRightScaleSecurityGroup() *schema.Resource {
 			"security_group": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -7538,6 +9382,20 @@ func resourceRightScaleSecurityGroup() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
+
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"href": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -7546,10 +9404,15 @@ func resourceRightScaleSecurityGroupCreate(d *schema.ResourceData, meta interfac
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("security_group"); ok {
-		params["security_group"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("security_group", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("SecurityGroup", "create", "/api/clouds/%s/security_groups", params)
@@ -7576,19 +9439,61 @@ func resourceRightScaleSecurityGroupCreate(d *schema.ResourceData, meta interfac
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleSecurityGroupRead(d, meta)
-	return nil
+	return resourceRightScaleSecurityGroupRead(d, meta)
 }
 func resourceRightScaleSecurityGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleSecurityGroupRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("SecurityGroup", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("SecurityGroup Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("SecurityGroup Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SecurityGroup HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("SecurityGroup Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SecurityGroup Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("SecurityGroup Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -7638,43 +9543,6 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"group_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"icmp_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"end_port": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"href": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -7689,10 +9557,40 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"icmp_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"start_port": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"group_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
 
 			// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was security_group_rule -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] at idx 0 -- Operating at root: true
@@ -7730,6 +9628,7 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 			"security_group_rule": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -7777,6 +9676,7 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 						"protocol_details": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key end_port. -- Submatch: ["[end_port]" "" "end_port"] at idx 1 -- cmdFlagName: security_group_rule[protocol_details][end_port] -- Operating at root: false
@@ -7821,6 +9721,13 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 					},
 				},
 			},
+
+			// DEBUG INFO
+			"end_port": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -7829,10 +9736,15 @@ func resourceRightScaleSecurityGroupRuleCreate(d *schema.ResourceData, meta inte
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("security_group_rule"); ok {
-		params["security_group_rule"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("security_group_rule", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("SecurityGroupRule", "create", "/api/security_group_rules", params)
@@ -7859,19 +9771,61 @@ func resourceRightScaleSecurityGroupRuleCreate(d *schema.ResourceData, meta inte
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleSecurityGroupRuleRead(d, meta)
-	return nil
+	return resourceRightScaleSecurityGroupRuleRead(d, meta)
 }
 func resourceRightScaleSecurityGroupRuleDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleSecurityGroupRuleRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("SecurityGroupRule", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("SecurityGroupRule Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("SecurityGroupRule Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SecurityGroupRule HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("SecurityGroupRule Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SecurityGroupRule Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("SecurityGroupRule Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleSecurityGroupRuleUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -8115,6 +10069,7 @@ func resourceRightScaleServer() *schema.Resource {
 			"server": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -8180,6 +10135,7 @@ func resourceRightScaleServer() *schema.Resource {
 						"instance": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key associate_public_ip_address. -- Submatch: ["[associate_public_ip_address]" "" "associate_public_ip_address"] at idx 1 -- cmdFlagName: server[instance][associate_public_ip_address] -- Operating at root: false
@@ -8239,6 +10195,7 @@ func resourceRightScaleServer() *schema.Resource {
 									"cloud_specific_attributes": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
@@ -8388,6 +10345,7 @@ func resourceRightScaleServer() *schema.Resource {
 									"inputs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[inputs][inputs] -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- cmdFlagName: server[instance][inputs][][value]
@@ -8457,6 +10415,7 @@ func resourceRightScaleServer() *schema.Resource {
 									"security_group_hrefs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[security_group_hrefs][security_group_hrefs] -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- cmdFlagName: server[instance][security_group_hrefs][]
@@ -8485,6 +10444,7 @@ func resourceRightScaleServer() *schema.Resource {
 									"subnet_hrefs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[subnet_hrefs][subnet_hrefs] -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- cmdFlagName: server[instance][subnet_hrefs][]
@@ -8534,10 +10494,15 @@ func resourceRightScaleServerCreate(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server"); ok {
-		params["server"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("server", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Server", "create", "/api/servers", params)
@@ -8564,19 +10529,61 @@ func resourceRightScaleServerCreate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleServerRead(d, meta)
-	return nil
+	return resourceRightScaleServerRead(d, meta)
 }
 func resourceRightScaleServerDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleServerRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Server", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Server Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Server Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Server HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Server Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Server Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Server Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -8671,21 +10678,6 @@ func resourceRightScaleServerArray() *schema.Resource {
 		Update: resourceRightScaleServerArrayUpdate,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"current_instances": &schema.Schema{
-				Type:     schema.TypeList, //[]Instance,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"instances_count": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
@@ -8821,6 +10813,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 			"server_array": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -8840,6 +10833,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 						"datacenter_policy": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key datacenter_href. -- Submatch: ["[datacenter_href]" "" "datacenter_href"] at idx 2 -- cmdFlagName: server_array[datacenter_policy][][datacenter_href] -- Operating at root: false
@@ -8918,6 +10912,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 						"elasticity_params": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was alert_specific_params -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- Operating at root: false
@@ -8931,6 +10926,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"alert_specific_params": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[alert_specific_params][alert_specific_params] -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- cmdFlagName: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
@@ -8968,6 +10964,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"bounds": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[bounds][bounds] -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- cmdFlagName: server_array[elasticity_params][bounds][min_count]
@@ -9009,6 +11006,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"pacing": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[pacing][pacing] -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- cmdFlagName: server_array[elasticity_params][pacing][resize_calm_time]
@@ -9066,6 +11064,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"queue_specific_params": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Created for key collect_audit_entries. -- Submatch: ["[collect_audit_entries]" "" "collect_audit_entries"] at idx 2 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][collect_audit_entries] -- Operating at root: false
@@ -9091,6 +11090,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 												"item_age": &schema.Schema{
 													Type:     schema.TypeSet,
 													Optional: true,
+													MaxItems: 1,
 													Elem: &schema.Resource{
 														Schema: map[string]*schema.Schema{
 															// DEBUG INFO Created for key algorithm. -- Submatch: ["[algorithm]" "" "algorithm"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][item_age][algorithm] -- Operating at root: false
@@ -9132,6 +11132,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 												"queue_size": &schema.Schema{
 													Type:     schema.TypeSet,
 													Optional: true,
+													MaxItems: 1,
 													Elem: &schema.Resource{
 														Schema: map[string]*schema.Schema{
 															// DEBUG INFO Created for key items_per_instance. -- Submatch: ["[items_per_instance]" "" "items_per_instance"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance] -- Operating at root: false
@@ -9177,6 +11178,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"schedule": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Created for key day. -- Submatch: ["[day]" "" "day"] at idx 3 -- cmdFlagName: server_array[elasticity_params][schedule][][day] -- Operating at root: false
@@ -9264,6 +11266,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 						"instance": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created for key associate_public_ip_address. -- Submatch: ["[associate_public_ip_address]" "" "associate_public_ip_address"] at idx 1 -- cmdFlagName: server_array[instance][associate_public_ip_address] -- Operating at root: false
@@ -9319,6 +11322,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"cloud_specific_attributes": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
@@ -9464,6 +11468,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"inputs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[inputs][inputs] -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- cmdFlagName: server_array[instance][inputs][][value]
@@ -9527,6 +11532,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"security_group_hrefs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[security_group_hrefs][security_group_hrefs] -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- cmdFlagName: server_array[instance][security_group_hrefs][]
@@ -9555,6 +11561,7 @@ func resourceRightScaleServerArray() *schema.Resource {
 									"subnet_hrefs": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[subnet_hrefs][subnet_hrefs] -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- cmdFlagName: server_array[instance][subnet_hrefs][]
@@ -9604,6 +11611,21 @@ func resourceRightScaleServerArray() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
+
+			// DEBUG INFO
+			"current_instances": &schema.Schema{
+				Type:     schema.TypeList, //[]Instance,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"instances_count": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -9612,10 +11634,15 @@ func resourceRightScaleServerArrayCreate(d *schema.ResourceData, meta interface{
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_array"); ok {
-		params["server_array"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("server_array", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("ServerArray", "create", "/api/server_arrays", params)
@@ -9642,13 +11669,13 @@ func resourceRightScaleServerArrayCreate(d *schema.ResourceData, meta interface{
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleServerArrayRead(d, meta)
-	return nil
+	return resourceRightScaleServerArrayRead(d, meta)
 }
 
 func resourceRightScaleServerArrayDelete(d *schema.ResourceData, meta interface{}) error {
@@ -9656,6 +11683,48 @@ func resourceRightScaleServerArrayDelete(d *schema.ResourceData, meta interface{
 }
 
 func resourceRightScaleServerArrayRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("ServerArray", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("ServerArray Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("ServerArray Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerArray HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("ServerArray Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerArray Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("ServerArray Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleServerArrayUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -9742,13 +11811,6 @@ func resourceRightScaleServerTemplate() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"revision": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -9772,6 +11834,7 @@ func resourceRightScaleServerTemplate() *schema.Resource {
 			"server_template": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -9827,6 +11890,13 @@ func resourceRightScaleServerTemplate() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeMap},
 			},
+
+			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -9835,10 +11905,15 @@ func resourceRightScaleServerTemplateCreate(d *schema.ResourceData, meta interfa
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_template"); ok {
-		params["server_template"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("server_template", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("ServerTemplate", "create", "/api/server_templates", params)
@@ -9865,19 +11940,61 @@ func resourceRightScaleServerTemplateCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleServerTemplateRead(d, meta)
-	return nil
+	return resourceRightScaleServerTemplateRead(d, meta)
 }
 func resourceRightScaleServerTemplateDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleServerTemplateRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("ServerTemplate", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("ServerTemplate Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("ServerTemplate Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerTemplate HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("ServerTemplate Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerTemplate Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("ServerTemplate Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -9926,6 +12043,21 @@ func resourceRightScaleServerTemplateMultiCloudImage() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"is_default": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -9941,6 +12073,7 @@ func resourceRightScaleServerTemplateMultiCloudImage() *schema.Resource {
 			"server_template_multi_cloud_image": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -9974,21 +12107,6 @@ func resourceRightScaleServerTemplateMultiCloudImage() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"is_default": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
 		},
 	}
 }
@@ -9997,10 +12115,15 @@ func resourceRightScaleServerTemplateMultiCloudImageCreate(d *schema.ResourceDat
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_template_multi_cloud_image"); ok {
-		params["server_template_multi_cloud_image"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("server_template_multi_cloud_image", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("ServerTemplateMultiCloudImage", "create", "/api/server_template_multi_cloud_images", params)
@@ -10027,19 +12150,61 @@ func resourceRightScaleServerTemplateMultiCloudImageCreate(d *schema.ResourceDat
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleServerTemplateMultiCloudImageRead(d, meta)
-	return nil
+	return resourceRightScaleServerTemplateMultiCloudImageRead(d, meta)
 }
 func resourceRightScaleServerTemplateMultiCloudImageDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleServerTemplateMultiCloudImageRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("ServerTemplateMultiCloudImage", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("ServerTemplateMultiCloudImage Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("ServerTemplateMultiCloudImage Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerTemplateMultiCloudImage HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("ServerTemplateMultiCloudImage Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("ServerTemplateMultiCloudImage Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("ServerTemplateMultiCloudImage Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -10125,6 +12290,13 @@ func resourceRightScaleSshKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -10137,6 +12309,7 @@ func resourceRightScaleSshKey() *schema.Resource {
 			"ssh_key": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -10172,13 +12345,6 @@ func resourceRightScaleSshKey() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -10187,10 +12353,15 @@ func resourceRightScaleSshKeyCreate(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ssh_key"); ok {
-		params["ssh_key"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("ssh_key", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("SshKey", "create", "/api/clouds/%s/ssh_keys", params)
@@ -10217,19 +12388,61 @@ func resourceRightScaleSshKeyCreate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleSshKeyRead(d, meta)
-	return nil
+	return resourceRightScaleSshKeyRead(d, meta)
 }
 func resourceRightScaleSshKeyDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleSshKeyRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("SshKey", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("SshKey Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("SshKey Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SshKey HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("SshKey Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("SshKey Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("SshKey Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -10278,56 +12491,6 @@ func resourceRightScaleSubnet() *schema.Resource {
 		Update: resourceRightScaleSubnetUpdate,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"state": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"cidr_block": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"is_default": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"visibility": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO Created for key subnet. -- Submatch: ["subnet[datacenter_href]" "subnet" "datacenter_href"] at idx 0 -- cmdFlagName: subnet[datacenter_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at subnet because temp_attr wasn't null, which it never will be
@@ -10357,6 +12520,7 @@ func resourceRightScaleSubnet() *schema.Resource {
 			"subnet": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -10400,7 +12564,57 @@ func resourceRightScaleSubnet() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"visibility": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"cidr_block": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"is_default": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -10413,10 +12627,15 @@ func resourceRightScaleSubnetCreate(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("subnet"); ok {
-		params["subnet"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("subnet", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Subnet", "create", "/api/clouds/%s/instances/%s/subnets", params)
@@ -10443,19 +12662,61 @@ func resourceRightScaleSubnetCreate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleSubnetRead(d, meta)
-	return nil
+	return resourceRightScaleSubnetRead(d, meta)
 }
 func resourceRightScaleSubnetDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleSubnetRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Subnet", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Subnet Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Subnet Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Subnet HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Subnet Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Subnet Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Subnet Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleSubnetUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -10537,6 +12798,48 @@ func resourceRightScaleTask() *schema.Resource {
 }
 
 func resourceRightScaleTaskRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Task", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Task Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Task Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Task HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Task Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Task Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Task Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -10576,7 +12879,14 @@ func resourceRightScaleUser() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"last_name": &schema.Schema{
+			"email": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"first_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -10592,6 +12902,20 @@ func resourceRightScaleUser() *schema.Resource {
 
 			// DEBUG INFO
 			"phone": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"principal_uid": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -10667,6 +12991,7 @@ func resourceRightScaleUser() *schema.Resource {
 			"user": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -10760,34 +13085,6 @@ func resourceRightScaleUser() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"email": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"first_name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"principal_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"company": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -10795,14 +13092,21 @@ func resourceRightScaleUser() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"timezone_name": &schema.Schema{
+			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
 			// DEBUG INFO
-			"updated_at": &schema.Schema{
+			"last_name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"timezone_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -10815,10 +13119,15 @@ func resourceRightScaleUserCreate(d *schema.ResourceData, meta interface{}) erro
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("user"); ok {
-		params["user"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("user", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("User", "create", "/api/users", params)
@@ -10845,16 +13154,58 @@ func resourceRightScaleUserCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleUserRead(d, meta)
-	return nil
+	return resourceRightScaleUserRead(d, meta)
 }
 
 func resourceRightScaleUserRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("User", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("User Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("User Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("User HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("User Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("User Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("User Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleUserUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -10876,6 +13227,48 @@ func resourceRightScaleUserData() *schema.Resource {
 }
 
 func resourceRightScaleUserDataRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("UserData", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("UserData Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("UserData Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("UserData HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("UserData Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("UserData Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("UserData Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -10923,43 +13316,7 @@ func resourceRightScaleVolume() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
-			"cloud_specific_attributes": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"status": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
 			"volume_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -10976,6 +13333,7 @@ func resourceRightScaleVolume() *schema.Resource {
 			"volume": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO Child at parent[volume][allowed_instance_hrefs] -- Submatch: ["volume[allowed_instance_hrefs]" "volume" "allowed_instance_hrefs"] at idx 0 -- cmdFlagName: volume[allowed_instance_hrefs][remove][]
@@ -10985,6 +13343,7 @@ func resourceRightScaleVolume() *schema.Resource {
 						"allowed_instance_hrefs": &schema.Schema{
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was add -- Submatch: ["[add]" "" "add"] at idx 1 -- Operating at root: false
@@ -10992,6 +13351,7 @@ func resourceRightScaleVolume() *schema.Resource {
 									"add": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[add][add] -- Submatch: ["[add]" "" "add"] at idx 1 -- cmdFlagName: volume[allowed_instance_hrefs][add][]
@@ -11008,6 +13368,7 @@ func resourceRightScaleVolume() *schema.Resource {
 									"remove": &schema.Schema{
 										Type:     schema.TypeSet,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												// DEBUG INFO Child at parent[remove][remove] -- Submatch: ["[remove]" "" "remove"] at idx 1 -- cmdFlagName: volume[allowed_instance_hrefs][remove][]
@@ -11101,7 +13462,43 @@ func resourceRightScaleVolume() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"cloud_specific_attributes": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"status": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
 			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -11114,10 +13511,15 @@ func resourceRightScaleVolumeCreate(d *schema.ResourceData, meta interface{}) er
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume"); ok {
-		params["volume"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("volume", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("Volume", "create", "/api/clouds/%s/volumes", params)
@@ -11144,19 +13546,61 @@ func resourceRightScaleVolumeCreate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleVolumeRead(d, meta)
-	return nil
+	return resourceRightScaleVolumeRead(d, meta)
 }
 func resourceRightScaleVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleVolumeRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("Volume", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("Volume Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("Volume Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Volume HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("Volume Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("Volume Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("Volume Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 func resourceRightScaleVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -11200,50 +13644,6 @@ func resourceRightScaleVolumeAttachment() *schema.Resource {
 		Read: resourceRightScaleVolumeAttachmentRead,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"links": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"resource_uid": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"device_id": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"state": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"updated_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
 			// DEBUG INFO Created for key volume_attachment. -- Submatch: ["volume_attachment[instance_href]" "volume_attachment" "instance_href"] at idx 0 -- cmdFlagName: volume_attachment[instance_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at volume_attachment because temp_attr wasn't null, which it never will be
@@ -11259,6 +13659,7 @@ func resourceRightScaleVolumeAttachment() *schema.Resource {
 			"volume_attachment": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -11291,6 +13692,35 @@ func resourceRightScaleVolumeAttachment() *schema.Resource {
 			},
 
 			// DEBUG INFO
+			"device": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"updated_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -11298,7 +13728,22 @@ func resourceRightScaleVolumeAttachment() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"device": &schema.Schema{
+			"device_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"links": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"resource_uid": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -11311,10 +13756,15 @@ func resourceRightScaleVolumeAttachmentCreate(d *schema.ResourceData, meta inter
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume_attachment"); ok {
-		params["volume_attachment"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("volume_attachment", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("VolumeAttachment", "create", "/api/clouds/%s/instances/%s/volume_attachments", params)
@@ -11341,19 +13791,61 @@ func resourceRightScaleVolumeAttachmentCreate(d *schema.ResourceData, meta inter
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleVolumeAttachmentRead(d, meta)
-	return nil
+	return resourceRightScaleVolumeAttachmentRead(d, meta)
 }
 func resourceRightScaleVolumeAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleVolumeAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("VolumeAttachment", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("VolumeAttachment Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("VolumeAttachment Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeAttachment HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("VolumeAttachment Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeAttachment Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("VolumeAttachment Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -11399,6 +13891,35 @@ func resourceRightScaleVolumeSnapshot() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"progress": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"size": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
 			"created_at": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -11414,7 +13935,7 @@ func resourceRightScaleVolumeSnapshot() *schema.Resource {
 			},
 
 			// DEBUG INFO
-			"progress": &schema.Schema{
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -11456,6 +13977,7 @@ func resourceRightScaleVolumeSnapshot() *schema.Resource {
 			"volume_snapshot": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						// DEBUG INFO %!s(MISSING)
@@ -11486,35 +14008,6 @@ func resourceRightScaleVolumeSnapshot() *schema.Resource {
 				},
 				ForceNew: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"size": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -11523,10 +14016,15 @@ func resourceRightScaleVolumeSnapshotCreate(d *schema.ResourceData, meta interfa
 	client := meta.(*cm15.API)
 
 	params := rsapi.APIParams{}
+	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume_snapshot"); ok {
-		params["volume_snapshot"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+		recursiveSchemaSetValueGet("volume_snapshot", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+
+	for key, val := range param_map {
+		params[key] = val
 	}
 
 	req, err := client.BuildRequest("VolumeSnapshot", "create", "/api/clouds/%s/volumes/%s/volume_snapshots", params)
@@ -11553,19 +14051,61 @@ func resourceRightScaleVolumeSnapshotCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScaleVolumeSnapshotRead(d, meta)
-	return nil
+	return resourceRightScaleVolumeSnapshotRead(d, meta)
 }
 func resourceRightScaleVolumeSnapshotDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
 func resourceRightScaleVolumeSnapshotRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("VolumeSnapshot", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("VolumeSnapshot Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("VolumeSnapshot Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeSnapshot HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("VolumeSnapshot Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeSnapshot Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("VolumeSnapshot Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
@@ -11586,6 +14126,28 @@ func resourceRightScaleVolumeType() *schema.Resource {
 		Read: resourceRightScaleVolumeTypeRead,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO
+			"actions": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeMap},
+			},
+
+			// DEBUG INFO
+			"created_at": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			// DEBUG INFO
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			// DEBUG INFO
 			"links": &schema.Schema{
 				Type:     schema.TypeList,
@@ -11621,33 +14183,53 @@ func resourceRightScaleVolumeType() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			// DEBUG INFO
-			"actions": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeMap},
-			},
-
-			// DEBUG INFO
-			"created_at": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			// DEBUG INFO
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 		},
 	}
 }
 
 func resourceRightScaleVolumeTypeRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("VolumeType", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("VolumeType Could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("VolumeType Could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeType HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("VolumeType Create failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("VolumeType Could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("VolumeType Failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+	}
 	return nil
 }
 
