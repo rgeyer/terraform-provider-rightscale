@@ -177,7 +177,7 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
 						temp_attr.Debug = fmt.Sprintf("%s\n// Matched at subMatch[2] == '' -- Operating at root: %t", temp_attr.Debug, operating_at_root)
           } else if subMatchIdx  == (len(submatches)-1) {
 						if temp_attr.Name != subMatch[2] {
-							temp_attr.SchemaType = "schema.TypeSet"
+							temp_attr.SchemaType = "schema.TypeMap"
 							if temp_attr.Children == nil {
 								temp_attr.Children = make(map[string]*TerraformSchemaAttribute)
 							}
@@ -195,7 +195,7 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
 					} else {
             child := subMatch[2]
 						// fmt.Println(fmt.Sprintf("Assigning child %s to parent %s using submatch %q", child, this_key, subMatch))
-						temp_attr.SchemaType = "schema.TypeSet"
+						temp_attr.SchemaType = "schema.TypeMap"
 						if temp_attr.Children == nil {
 							temp_attr.Debug = fmt.Sprintf("%s\n// My children were nil and are being initialized", temp_attr.Debug)
 							temp_attr.Children = make(map[string]*TerraformSchemaAttribute)
@@ -227,7 +227,7 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
 								temp_attr.Children[child].Children = make(map[string]*TerraformSchemaAttribute)
 							}
 							fmt.Println("Finished allocating children")
-							temp_attr.Children[child].SchemaType = "schema.TypeSet"
+							temp_attr.Children[child].SchemaType = "schema.TypeMap"
 							parent_map[this_key] = temp_attr
 							temp_attr.Children[child].Debug = fmt.Sprintf("%s\n// (At Root) My children became the parent map. -- Submatch: %q -- CmdFlag: %s", temp_attr.Children[child].Debug, subMatch, cmdFlag.Name)
 							parent_map = temp_attr.Children[child].Children
@@ -373,18 +373,7 @@ const resourceTerraformTmpl = `{{define "schemaObject"}}// DEBUG INFO {{.Debug}}
 "{{.Name}}": &schema.Schema{
 		Type: {{.SchemaType}},
 		{{.RequiredProp}},{{if .Computed}}
-		Computed: true,{{end}}{{if .ShouldPrintChildren}}
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				{{range .Children}}{{template "schemaObject" .}},
-				{{end}}
-			},
-		},
-		Set: func(v interface{}) int {
-			// there can be only one root device; no need to hash anything
-			return 0
-		},{{else}}{{if .Elem}}
-		Elem: {{.Elem}},{{end}}{{end}}{{if .ForceNew}}
+		Computed: true,{{end}}{{if .ForceNew}}
 		ForceNew: true,{{end}}
 	}{{end}}{{range .}}{{$resource := .}}{{$attributes := terraformSchemaAttributes .}}
 func resourceRightScale{{$resource.Name}}() *schema.Resource {
@@ -412,8 +401,8 @@ func {{$resource.Name}}SchemaToMap(d *schema.ResourceData) map[string]interface{
 	param_map := make(map[string]interface{})
 
 	{{range $attributes}}{{if not .Computed}}if val, ok := d.GetOk("{{.Name}}"); ok {
-		// param_map["{{.Name}}"] = val
-		recursiveSchemaSetValueGet("{{.Name}}", val, param_map)
+		param_map["{{.Name}}"] = val
+		// recursiveSchemaSetValueGet("{{.Name}}", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	{{end}}{{end}}
@@ -520,7 +509,7 @@ func {{$resource.Name}}MapToSchema(d *schema.ResourceData, resMap map[string]int
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// {{$resource.Name}}MapToSchema(d, resource)
+		{{$resource.Name}}MapToSchema(d, resource)
 	}
 	return nil
 }{{end}}{{if eq .Name "update"}}func resourceRightScale{{$resource.Name}}Update(d *schema.ResourceData, meta interface{}) error {

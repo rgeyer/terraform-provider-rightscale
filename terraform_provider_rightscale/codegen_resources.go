@@ -107,7 +107,7 @@ func resourceRightScaleAccountRead(d *schema.ResourceData, meta interface{}) err
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// AccountMapToSchema(d, resource)
+		AccountMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -184,7 +184,7 @@ func resourceRightScaleAccountGroupRead(d *schema.ResourceData, meta interface{}
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// AccountGroupMapToSchema(d, resource)
+		AccountGroupMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -279,7 +279,7 @@ func resourceRightScaleAlertRead(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// AlertMapToSchema(d, resource)
+		AlertMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -409,82 +409,8 @@ func resourceRightScaleAlertSpec() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at alert_spec because temp_attr wasn't null, which it never will be
 			"alert_spec": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"condition": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"duration": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"escalation_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"file": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"subject_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"threshold": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"variable": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"vote_tag": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"vote_type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -494,8 +420,8 @@ func AlertSpecSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("alert_spec"); ok {
-		// param_map["alert_spec"] = val
-		recursiveSchemaSetValueGet("alert_spec", val, param_map)
+		param_map["alert_spec"] = val
+		// recursiveSchemaSetValueGet("alert_spec", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -632,7 +558,7 @@ func resourceRightScaleAlertSpecRead(d *schema.ResourceData, meta interface{}) e
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// AlertSpecMapToSchema(d, resource)
+		AlertSpecMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -687,6 +613,17 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 		Update: resourceRightScaleAuditEntryUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO Created for key notify. -- Submatch: ["notify" "notify" ""] at idx 0 -- cmdFlagName: notify -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at notify because temp_attr wasn't null, which it never will be
+			// Discovered at key notify of parent map and updating -- Submatch: ["notify" "notify" ""] at idx 0 -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at notify because temp_attr wasn't null, which it never will be
+			"notify": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
 			// DEBUG INFO Created for key audit_entry. -- Submatch: ["audit_entry[auditee_href]" "audit_entry" "auditee_href"] at idx 0 -- cmdFlagName: audit_entry[auditee_href] -- Operating at root: true
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at audit_entry because temp_attr wasn't null, which it never will be
@@ -704,57 +641,14 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at audit_entry because temp_attr wasn't null, which it never will be
 			"audit_entry": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"auditee_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"detail": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"offset": &schema.Schema{
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"summary": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 
 			// DEBUG INFO Created for key user_email. -- Submatch: ["user_email" "user_email" ""] at idx 0 -- cmdFlagName: user_email -- Operating at root: true
 			// Matched at subMatch[2] == '' -- Operating at root: true
 			// Assigned to parent map at user_email because temp_attr wasn't null, which it never will be
 			"user_email": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-
-			// DEBUG INFO Created for key notify. -- Submatch: ["notify" "notify" ""] at idx 0 -- cmdFlagName: notify -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at notify because temp_attr wasn't null, which it never will be
-			// Discovered at key notify of parent map and updating -- Submatch: ["notify" "notify" ""] at idx 0 -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at notify because temp_attr wasn't null, which it never will be
-			"notify": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -765,19 +659,19 @@ func resourceRightScaleAuditEntry() *schema.Resource {
 func AuditEntrySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
+	if val, ok := d.GetOk("notify"); ok {
+		param_map["notify"] = val
+		// recursiveSchemaSetValueGet("notify", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
 	if val, ok := d.GetOk("audit_entry"); ok {
-		// param_map["audit_entry"] = val
-		recursiveSchemaSetValueGet("audit_entry", val, param_map)
+		param_map["audit_entry"] = val
+		// recursiveSchemaSetValueGet("audit_entry", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("user_email"); ok {
-		// param_map["user_email"] = val
-		recursiveSchemaSetValueGet("user_email", val, param_map)
-		log.Printf("DEBUG Val for attribute was %q", param_map)
-	}
-	if val, ok := d.GetOk("notify"); ok {
-		// param_map["notify"] = val
-		recursiveSchemaSetValueGet("notify", val, param_map)
+		param_map["user_email"] = val
+		// recursiveSchemaSetValueGet("user_email", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -786,6 +680,17 @@ func AuditEntrySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 
 func AuditEntryMapToSchema(d *schema.ResourceData, resMap map[string]interface{}) {
 
+	if depl, ok := d.GetOk("notify"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("notify", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The notify property of the AuditEntry resource was not set on read")
+	}
 	if depl, ok := d.GetOk("audit_entry"); ok {
 		depl_as_map := depl.(map[string]interface{})
 		for resMapKey, resMapValue := range resMap {
@@ -807,17 +712,6 @@ func AuditEntryMapToSchema(d *schema.ResourceData, resMap map[string]interface{}
 		d.Set("user_email", depl_as_map)
 	} else {
 		log.Printf("[DEBUG] The user_email property of the AuditEntry resource was not set on read")
-	}
-	if depl, ok := d.GetOk("notify"); ok {
-		depl_as_map := depl.(map[string]interface{})
-		for resMapKey, resMapValue := range resMap {
-			if _, ok = depl_as_map[resMapKey]; ok {
-				depl_as_map[resMapKey] = resMapValue
-			}
-		}
-		d.Set("notify", depl_as_map)
-	} else {
-		log.Printf("[DEBUG] The notify property of the AuditEntry resource was not set on read")
 	}
 }
 
@@ -906,7 +800,7 @@ func resourceRightScaleAuditEntryRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// AuditEntryMapToSchema(d, resource)
+		AuditEntryMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -987,54 +881,8 @@ func resourceRightScaleBackup() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at backup because temp_attr wasn't null, which it never will be
 			"backup": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"committed": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"from_master": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"lineage": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[backup][volume_attachment_hrefs] -- Submatch: ["backup[volume_attachment_hrefs]" "backup" "volume_attachment_hrefs"] at idx 0 -- cmdFlagName: backup[volume_attachment_hrefs][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["backup[volume_attachment_hrefs]" "backup" "volume_attachment_hrefs"] -- CmdFlag: backup[volume_attachment_hrefs][]
-						"volume_attachment_hrefs": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -1044,8 +892,8 @@ func BackupSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("backup"); ok {
-		// param_map["backup"] = val
-		recursiveSchemaSetValueGet("backup", val, param_map)
+		param_map["backup"] = val
+		// recursiveSchemaSetValueGet("backup", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -1182,7 +1030,7 @@ func resourceRightScaleBackupRead(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// BackupMapToSchema(d, resource)
+		BackupMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -1229,28 +1077,8 @@ func resourceRightScaleChildAccount() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at child_account because temp_attr wasn't null, which it never will be
 			"child_account": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cluster_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -1260,8 +1088,8 @@ func ChildAccountSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("child_account"); ok {
-		// param_map["child_account"] = val
-		recursiveSchemaSetValueGet("child_account", val, param_map)
+		param_map["child_account"] = val
+		// recursiveSchemaSetValueGet("child_account", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -1402,7 +1230,7 @@ func resourceRightScaleCloudRead(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// CloudMapToSchema(d, resource)
+		CloudMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -1451,34 +1279,8 @@ func resourceRightScaleCloudAccount() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at cloud_account because temp_attr wasn't null, which it never will be
 			"cloud_account": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"creds": &schema.Schema{
-							Type:     schema.TypeMap,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"token": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -1489,8 +1291,8 @@ func CloudAccountSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("cloud_account"); ok {
-		// param_map["cloud_account"] = val
-		recursiveSchemaSetValueGet("cloud_account", val, param_map)
+		param_map["cloud_account"] = val
+		// recursiveSchemaSetValueGet("cloud_account", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -1627,7 +1429,7 @@ func resourceRightScaleCloudAccountRead(d *schema.ResourceData, meta interface{}
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// CloudAccountMapToSchema(d, resource)
+		CloudAccountMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -1761,7 +1563,7 @@ func resourceRightScaleCookbookRead(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// CookbookMapToSchema(d, resource)
+		CookbookMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -1821,28 +1623,8 @@ func resourceRightScaleCookbookAttachment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at cookbook_attachment because temp_attr wasn't null, which it never will be
 			"cookbook_attachment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cookbook_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"server_template_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -1853,8 +1635,8 @@ func CookbookAttachmentSchemaToMap(d *schema.ResourceData) map[string]interface{
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("cookbook_attachment"); ok {
-		// param_map["cookbook_attachment"] = val
-		recursiveSchemaSetValueGet("cookbook_attachment", val, param_map)
+		param_map["cookbook_attachment"] = val
+		// recursiveSchemaSetValueGet("cookbook_attachment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -1991,7 +1773,7 @@ func resourceRightScaleCookbookAttachmentRead(d *schema.ResourceData, meta inter
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// CookbookAttachmentMapToSchema(d, resource)
+		CookbookAttachmentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2061,34 +1843,8 @@ func resourceRightScaleCredential() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at credential because temp_attr wasn't null, which it never will be
 			"credential": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"value": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -2098,8 +1854,8 @@ func CredentialSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("credential"); ok {
-		// param_map["credential"] = val
-		recursiveSchemaSetValueGet("credential", val, param_map)
+		param_map["credential"] = val
+		// recursiveSchemaSetValueGet("credential", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -2236,7 +1992,7 @@ func resourceRightScaleCredentialRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// CredentialMapToSchema(d, resource)
+		CredentialMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2316,7 +2072,7 @@ func resourceRightScaleDatacenterRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// DatacenterMapToSchema(d, resource)
+		DatacenterMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2410,34 +2166,8 @@ func resourceRightScaleDeployment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at deployment because temp_attr wasn't null, which it never will be
 			"deployment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"server_tag_scope": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -2447,8 +2177,8 @@ func DeploymentSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("deployment"); ok {
-		// param_map["deployment"] = val
-		recursiveSchemaSetValueGet("deployment", val, param_map)
+		param_map["deployment"] = val
+		// recursiveSchemaSetValueGet("deployment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -2585,7 +2315,7 @@ func resourceRightScaleDeploymentRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// DeploymentMapToSchema(d, resource)
+		DeploymentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2688,7 +2418,7 @@ func resourceRightScaleIdentityProviderRead(d *schema.ResourceData, meta interfa
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// IdentityProviderMapToSchema(d, resource)
+		IdentityProviderMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2765,7 +2495,7 @@ func resourceRightScaleImageRead(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// ImageMapToSchema(d, resource)
+		ImageMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -2893,6 +2623,14 @@ func resourceRightScaleInstance() *schema.Resource {
 		Update: resourceRightScaleInstanceUpdate,
 
 		Schema: map[string]*schema.Schema{
+			// DEBUG INFO Created for key api_behavior. -- Submatch: ["api_behavior" "api_behavior" ""] at idx 0 -- cmdFlagName: api_behavior -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at api_behavior because temp_attr wasn't null, which it never will be
+			"api_behavior": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
 			// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was instance -- Submatch: ["instance[subnet_hrefs]" "instance" "subnet_hrefs"] at idx 0 -- Operating at root: true
 			// This is a top level attribute.
 			// Discovered at key instance of parent map and updating -- Submatch: ["instance[image_href]" "instance" "image_href"] at idx 0 -- Operating at root: true
@@ -3000,343 +2738,8 @@ func resourceRightScaleInstance() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at instance because temp_attr wasn't null, which it never will be
 			"instance": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"associate_public_ip_address": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[instance][cloud_specific_attributes] -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] at idx 0 -- cmdFlagName: instance[cloud_specific_attributes][create_default_port_forwarding_rules]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][create_default_port_forwarding_rules]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][automatic_instance_store_mapping]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_performance]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_type_uid]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][iam_instance_profile]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][local_ssd_interface]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][delete_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][create_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][placement_tenancy]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_size]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][local_ssd_count]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][max_spot_price]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][keep_alive_url]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][keep_alive_id]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][ebs_optimized]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][pricing_type]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][preemptible]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][memory_mb]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][num_cores]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][disk_gb]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][create_default_port_forwarding_rules]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][automatic_instance_store_mapping]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_performance]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_type_uid]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][iam_instance_profile]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][local_ssd_interface]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][create_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][delete_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][placement_tenancy]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][root_volume_size]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][local_ssd_count]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][max_spot_price]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][keep_alive_url]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][keep_alive_id]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][pricing_type]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][preemptible]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][num_cores]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][memory_mb]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[cloud_specific_attributes]" "instance" "cloud_specific_attributes"] -- CmdFlag: instance[cloud_specific_attributes][disk_gb]
-						"cloud_specific_attributes": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
-									// Assigned to parent map at automatic_instance_store_mapping because temp_attr wasn't null, which it never will be
-									// Discovered at key automatic_instance_store_mapping of parent map and updating -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at automatic_instance_store_mapping because temp_attr wasn't null, which it never will be
-									"automatic_instance_store_mapping": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key create_boot_volume. -- Submatch: ["[create_boot_volume]" "" "create_boot_volume"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][create_boot_volume] -- Operating at root: false
-									// Assigned to parent map at create_boot_volume because temp_attr wasn't null, which it never will be
-									// Discovered at key create_boot_volume of parent map and updating -- Submatch: ["[create_boot_volume]" "" "create_boot_volume"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at create_boot_volume because temp_attr wasn't null, which it never will be
-									"create_boot_volume": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key create_default_port_forwarding_rules. -- Submatch: ["[create_default_port_forwarding_rules]" "" "create_default_port_forwarding_rules"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][create_default_port_forwarding_rules] -- Operating at root: false
-									// Assigned to parent map at create_default_port_forwarding_rules because temp_attr wasn't null, which it never will be
-									// Discovered at key create_default_port_forwarding_rules of parent map and updating -- Submatch: ["[create_default_port_forwarding_rules]" "" "create_default_port_forwarding_rules"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at create_default_port_forwarding_rules because temp_attr wasn't null, which it never will be
-									"create_default_port_forwarding_rules": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key delete_boot_volume. -- Submatch: ["[delete_boot_volume]" "" "delete_boot_volume"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][delete_boot_volume] -- Operating at root: false
-									// Assigned to parent map at delete_boot_volume because temp_attr wasn't null, which it never will be
-									// Discovered at key delete_boot_volume of parent map and updating -- Submatch: ["[delete_boot_volume]" "" "delete_boot_volume"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at delete_boot_volume because temp_attr wasn't null, which it never will be
-									"delete_boot_volume": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key disk_gb. -- Submatch: ["[disk_gb]" "" "disk_gb"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][disk_gb] -- Operating at root: false
-									// Assigned to parent map at disk_gb because temp_attr wasn't null, which it never will be
-									// Discovered at key disk_gb of parent map and updating -- Submatch: ["[disk_gb]" "" "disk_gb"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at disk_gb because temp_attr wasn't null, which it never will be
-									"disk_gb": &schema.Schema{
-										Type:     schema.TypeInt,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ebs_optimized. -- Submatch: ["[ebs_optimized]" "" "ebs_optimized"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][ebs_optimized] -- Operating at root: false
-									// Assigned to parent map at ebs_optimized because temp_attr wasn't null, which it never will be
-									"ebs_optimized": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key iam_instance_profile. -- Submatch: ["[iam_instance_profile]" "" "iam_instance_profile"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][iam_instance_profile] -- Operating at root: false
-									// Assigned to parent map at iam_instance_profile because temp_attr wasn't null, which it never will be
-									// Discovered at key iam_instance_profile of parent map and updating -- Submatch: ["[iam_instance_profile]" "" "iam_instance_profile"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at iam_instance_profile because temp_attr wasn't null, which it never will be
-									"iam_instance_profile": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key keep_alive_id. -- Submatch: ["[keep_alive_id]" "" "keep_alive_id"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][keep_alive_id] -- Operating at root: false
-									// Assigned to parent map at keep_alive_id because temp_attr wasn't null, which it never will be
-									// Discovered at key keep_alive_id of parent map and updating -- Submatch: ["[keep_alive_id]" "" "keep_alive_id"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at keep_alive_id because temp_attr wasn't null, which it never will be
-									"keep_alive_id": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key keep_alive_url. -- Submatch: ["[keep_alive_url]" "" "keep_alive_url"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][keep_alive_url] -- Operating at root: false
-									// Assigned to parent map at keep_alive_url because temp_attr wasn't null, which it never will be
-									// Discovered at key keep_alive_url of parent map and updating -- Submatch: ["[keep_alive_url]" "" "keep_alive_url"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at keep_alive_url because temp_attr wasn't null, which it never will be
-									"keep_alive_url": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key local_ssd_count. -- Submatch: ["[local_ssd_count]" "" "local_ssd_count"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][local_ssd_count] -- Operating at root: false
-									// Assigned to parent map at local_ssd_count because temp_attr wasn't null, which it never will be
-									// Discovered at key local_ssd_count of parent map and updating -- Submatch: ["[local_ssd_count]" "" "local_ssd_count"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at local_ssd_count because temp_attr wasn't null, which it never will be
-									"local_ssd_count": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key local_ssd_interface. -- Submatch: ["[local_ssd_interface]" "" "local_ssd_interface"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][local_ssd_interface] -- Operating at root: false
-									// Assigned to parent map at local_ssd_interface because temp_attr wasn't null, which it never will be
-									// Discovered at key local_ssd_interface of parent map and updating -- Submatch: ["[local_ssd_interface]" "" "local_ssd_interface"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at local_ssd_interface because temp_attr wasn't null, which it never will be
-									"local_ssd_interface": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key max_spot_price. -- Submatch: ["[max_spot_price]" "" "max_spot_price"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][max_spot_price] -- Operating at root: false
-									// Assigned to parent map at max_spot_price because temp_attr wasn't null, which it never will be
-									// Discovered at key max_spot_price of parent map and updating -- Submatch: ["[max_spot_price]" "" "max_spot_price"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at max_spot_price because temp_attr wasn't null, which it never will be
-									"max_spot_price": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key memory_mb. -- Submatch: ["[memory_mb]" "" "memory_mb"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][memory_mb] -- Operating at root: false
-									// Assigned to parent map at memory_mb because temp_attr wasn't null, which it never will be
-									// Discovered at key memory_mb of parent map and updating -- Submatch: ["[memory_mb]" "" "memory_mb"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at memory_mb because temp_attr wasn't null, which it never will be
-									"memory_mb": &schema.Schema{
-										Type:     schema.TypeInt,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key num_cores. -- Submatch: ["[num_cores]" "" "num_cores"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][num_cores] -- Operating at root: false
-									// Assigned to parent map at num_cores because temp_attr wasn't null, which it never will be
-									// Discovered at key num_cores of parent map and updating -- Submatch: ["[num_cores]" "" "num_cores"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at num_cores because temp_attr wasn't null, which it never will be
-									"num_cores": &schema.Schema{
-										Type:     schema.TypeInt,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key placement_tenancy. -- Submatch: ["[placement_tenancy]" "" "placement_tenancy"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][placement_tenancy] -- Operating at root: false
-									// Assigned to parent map at placement_tenancy because temp_attr wasn't null, which it never will be
-									// Discovered at key placement_tenancy of parent map and updating -- Submatch: ["[placement_tenancy]" "" "placement_tenancy"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at placement_tenancy because temp_attr wasn't null, which it never will be
-									"placement_tenancy": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key preemptible. -- Submatch: ["[preemptible]" "" "preemptible"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][preemptible] -- Operating at root: false
-									// Assigned to parent map at preemptible because temp_attr wasn't null, which it never will be
-									// Discovered at key preemptible of parent map and updating -- Submatch: ["[preemptible]" "" "preemptible"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at preemptible because temp_attr wasn't null, which it never will be
-									"preemptible": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key pricing_type. -- Submatch: ["[pricing_type]" "" "pricing_type"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][pricing_type] -- Operating at root: false
-									// Assigned to parent map at pricing_type because temp_attr wasn't null, which it never will be
-									// Discovered at key pricing_type of parent map and updating -- Submatch: ["[pricing_type]" "" "pricing_type"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at pricing_type because temp_attr wasn't null, which it never will be
-									"pricing_type": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key root_volume_performance. -- Submatch: ["[root_volume_performance]" "" "root_volume_performance"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][root_volume_performance] -- Operating at root: false
-									// Assigned to parent map at root_volume_performance because temp_attr wasn't null, which it never will be
-									// Discovered at key root_volume_performance of parent map and updating -- Submatch: ["[root_volume_performance]" "" "root_volume_performance"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at root_volume_performance because temp_attr wasn't null, which it never will be
-									"root_volume_performance": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key root_volume_size. -- Submatch: ["[root_volume_size]" "" "root_volume_size"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][root_volume_size] -- Operating at root: false
-									// Assigned to parent map at root_volume_size because temp_attr wasn't null, which it never will be
-									// Discovered at key root_volume_size of parent map and updating -- Submatch: ["[root_volume_size]" "" "root_volume_size"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at root_volume_size because temp_attr wasn't null, which it never will be
-									"root_volume_size": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key root_volume_type_uid. -- Submatch: ["[root_volume_type_uid]" "" "root_volume_type_uid"] at idx 1 -- cmdFlagName: instance[cloud_specific_attributes][root_volume_type_uid] -- Operating at root: false
-									// Assigned to parent map at root_volume_type_uid because temp_attr wasn't null, which it never will be
-									// Discovered at key root_volume_type_uid of parent map and updating -- Submatch: ["[root_volume_type_uid]" "" "root_volume_type_uid"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at root_volume_type_uid because temp_attr wasn't null, which it never will be
-									"root_volume_type_uid": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"datacenter_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"instance_type_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"ip_forwarding_enabled": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"kernel_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"multi_cloud_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"placement_group_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"private_ip_address": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"ramdisk_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[instance][security_group_hrefs] -- Submatch: ["instance[security_group_hrefs]" "instance" "security_group_hrefs"] at idx 0 -- cmdFlagName: instance[security_group_hrefs][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["instance[security_group_hrefs]" "instance" "security_group_hrefs"] -- CmdFlag: instance[security_group_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[security_group_hrefs]" "instance" "security_group_hrefs"] -- CmdFlag: instance[security_group_hrefs][]
-						"security_group_hrefs": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"server_template_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"ssh_key_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[instance][subnet_hrefs] -- Submatch: ["instance[subnet_hrefs]" "instance" "subnet_hrefs"] at idx 0 -- cmdFlagName: instance[subnet_hrefs][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["instance[subnet_hrefs]" "instance" "subnet_hrefs"] -- CmdFlag: instance[subnet_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["instance[subnet_hrefs]" "instance" "subnet_hrefs"] -- CmdFlag: instance[subnet_hrefs][]
-						"subnet_hrefs": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"user_data": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
-			},
-
-			// DEBUG INFO Created for key api_behavior. -- Submatch: ["api_behavior" "api_behavior" ""] at idx 0 -- cmdFlagName: api_behavior -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at api_behavior because temp_attr wasn't null, which it never will be
-			"api_behavior": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
 			},
 		},
 	}
@@ -3345,14 +2748,14 @@ func resourceRightScaleInstance() *schema.Resource {
 func InstanceSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
-	if val, ok := d.GetOk("instance"); ok {
-		// param_map["instance"] = val
-		recursiveSchemaSetValueGet("instance", val, param_map)
+	if val, ok := d.GetOk("api_behavior"); ok {
+		param_map["api_behavior"] = val
+		// recursiveSchemaSetValueGet("api_behavior", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
-	if val, ok := d.GetOk("api_behavior"); ok {
-		// param_map["api_behavior"] = val
-		recursiveSchemaSetValueGet("api_behavior", val, param_map)
+	if val, ok := d.GetOk("instance"); ok {
+		param_map["instance"] = val
+		// recursiveSchemaSetValueGet("instance", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -3361,17 +2764,6 @@ func InstanceSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 
 func InstanceMapToSchema(d *schema.ResourceData, resMap map[string]interface{}) {
 
-	if depl, ok := d.GetOk("instance"); ok {
-		depl_as_map := depl.(map[string]interface{})
-		for resMapKey, resMapValue := range resMap {
-			if _, ok = depl_as_map[resMapKey]; ok {
-				depl_as_map[resMapKey] = resMapValue
-			}
-		}
-		d.Set("instance", depl_as_map)
-	} else {
-		log.Printf("[DEBUG] The instance property of the Instance resource was not set on read")
-	}
 	if depl, ok := d.GetOk("api_behavior"); ok {
 		depl_as_map := depl.(map[string]interface{})
 		for resMapKey, resMapValue := range resMap {
@@ -3382,6 +2774,17 @@ func InstanceMapToSchema(d *schema.ResourceData, resMap map[string]interface{}) 
 		d.Set("api_behavior", depl_as_map)
 	} else {
 		log.Printf("[DEBUG] The api_behavior property of the Instance resource was not set on read")
+	}
+	if depl, ok := d.GetOk("instance"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("instance", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The instance property of the Instance resource was not set on read")
 	}
 }
 
@@ -3470,7 +2873,7 @@ func resourceRightScaleInstanceRead(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// InstanceMapToSchema(d, resource)
+		InstanceMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -3551,7 +2954,7 @@ func resourceRightScaleInstanceTypeRead(d *schema.ResourceData, meta interface{}
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// InstanceTypeMapToSchema(d, resource)
+		InstanceTypeMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -3620,40 +3023,8 @@ func resourceRightScaleIpAddress() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at ip_address because temp_attr wasn't null, which it never will be
 			"ip_address": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"domain": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -3663,8 +3034,8 @@ func IpAddressSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ip_address"); ok {
-		// param_map["ip_address"] = val
-		recursiveSchemaSetValueGet("ip_address", val, param_map)
+		param_map["ip_address"] = val
+		// recursiveSchemaSetValueGet("ip_address", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -3801,7 +3172,7 @@ func resourceRightScaleIpAddressRead(d *schema.ResourceData, meta interface{}) e
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// IpAddressMapToSchema(d, resource)
+		IpAddressMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -3860,46 +3231,8 @@ func resourceRightScaleIpAddressBinding() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at ip_address_binding because temp_attr wasn't null, which it never will be
 			"ip_address_binding": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"instance_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"private_port": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"protocol": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"public_ip_address_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"public_port": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -3910,8 +3243,8 @@ func IpAddressBindingSchemaToMap(d *schema.ResourceData) map[string]interface{} 
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ip_address_binding"); ok {
-		// param_map["ip_address_binding"] = val
-		recursiveSchemaSetValueGet("ip_address_binding", val, param_map)
+		param_map["ip_address_binding"] = val
+		// recursiveSchemaSetValueGet("ip_address_binding", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -4048,7 +3381,7 @@ func resourceRightScaleIpAddressBindingRead(d *schema.ResourceData, meta interfa
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// IpAddressBindingMapToSchema(d, resource)
+		IpAddressBindingMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -4131,7 +3464,7 @@ func resourceRightScaleMonitoringMetricRead(d *schema.ResourceData, meta interfa
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// MonitoringMetricMapToSchema(d, resource)
+		MonitoringMetricMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -4208,28 +3541,8 @@ func resourceRightScaleMultiCloudImage() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at multi_cloud_image because temp_attr wasn't null, which it never will be
 			"multi_cloud_image": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -4239,8 +3552,8 @@ func MultiCloudImageSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("multi_cloud_image"); ok {
-		// param_map["multi_cloud_image"] = val
-		recursiveSchemaSetValueGet("multi_cloud_image", val, param_map)
+		param_map["multi_cloud_image"] = val
+		// recursiveSchemaSetValueGet("multi_cloud_image", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -4377,7 +3690,7 @@ func resourceRightScaleMultiCloudImageRead(d *schema.ResourceData, meta interfac
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// MultiCloudImageMapToSchema(d, resource)
+		MultiCloudImageMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -4471,52 +3784,8 @@ func resourceRightScaleMultiCloudImageSetting() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at multi_cloud_image_setting because temp_attr wasn't null, which it never will be
 			"multi_cloud_image_setting": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"instance_type_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"kernel_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"ramdisk_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"user_data": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -4526,8 +3795,8 @@ func MultiCloudImageSettingSchemaToMap(d *schema.ResourceData) map[string]interf
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("multi_cloud_image_setting"); ok {
-		// param_map["multi_cloud_image_setting"] = val
-		recursiveSchemaSetValueGet("multi_cloud_image_setting", val, param_map)
+		param_map["multi_cloud_image_setting"] = val
+		// recursiveSchemaSetValueGet("multi_cloud_image_setting", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -4664,7 +3933,7 @@ func resourceRightScaleMultiCloudImageSettingRead(d *schema.ResourceData, meta i
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// MultiCloudImageSettingMapToSchema(d, resource)
+		MultiCloudImageSettingMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -4742,52 +4011,8 @@ func resourceRightScaleNetwork() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network because temp_attr wasn't null, which it never will be
 			"network": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cidr_block": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"instance_tenancy": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"route_table_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -4797,8 +4022,8 @@ func NetworkSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network"); ok {
-		// param_map["network"] = val
-		recursiveSchemaSetValueGet("network", val, param_map)
+		param_map["network"] = val
+		// recursiveSchemaSetValueGet("network", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -4935,7 +4160,7 @@ func resourceRightScaleNetworkRead(d *schema.ResourceData, meta interface{}) err
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// NetworkMapToSchema(d, resource)
+		NetworkMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -5010,46 +4235,8 @@ func resourceRightScaleNetworkGateway() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network_gateway because temp_attr wasn't null, which it never will be
 			"network_gateway": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -5059,8 +4246,8 @@ func NetworkGatewaySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_gateway"); ok {
-		// param_map["network_gateway"] = val
-		recursiveSchemaSetValueGet("network_gateway", val, param_map)
+		param_map["network_gateway"] = val
+		// recursiveSchemaSetValueGet("network_gateway", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -5197,7 +4384,7 @@ func resourceRightScaleNetworkGatewayRead(d *schema.ResourceData, meta interface
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// NetworkGatewayMapToSchema(d, resource)
+		NetworkGatewayMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -5276,46 +4463,8 @@ func resourceRightScaleNetworkOptionGroup() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network_option_group because temp_attr wasn't null, which it never will be
 			"network_option_group": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"options": &schema.Schema{
-							Type:     schema.TypeMap,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -5325,8 +4474,8 @@ func NetworkOptionGroupSchemaToMap(d *schema.ResourceData) map[string]interface{
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_option_group"); ok {
-		// param_map["network_option_group"] = val
-		recursiveSchemaSetValueGet("network_option_group", val, param_map)
+		param_map["network_option_group"] = val
+		// recursiveSchemaSetValueGet("network_option_group", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -5463,7 +4612,7 @@ func resourceRightScaleNetworkOptionGroupRead(d *schema.ResourceData, meta inter
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// NetworkOptionGroupMapToSchema(d, resource)
+		NetworkOptionGroupMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -5525,28 +4674,8 @@ func resourceRightScaleNetworkOptionGroupAttachment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at network_option_group_attachment because temp_attr wasn't null, which it never will be
 			"network_option_group_attachment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_option_group_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -5556,8 +4685,8 @@ func NetworkOptionGroupAttachmentSchemaToMap(d *schema.ResourceData) map[string]
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("network_option_group_attachment"); ok {
-		// param_map["network_option_group_attachment"] = val
-		recursiveSchemaSetValueGet("network_option_group_attachment", val, param_map)
+		param_map["network_option_group_attachment"] = val
+		// recursiveSchemaSetValueGet("network_option_group_attachment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -5694,7 +4823,7 @@ func resourceRightScaleNetworkOptionGroupAttachmentRead(d *schema.ResourceData, 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// NetworkOptionGroupAttachmentMapToSchema(d, resource)
+		NetworkOptionGroupAttachmentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -5714,33 +4843,6 @@ func resourceRightScaleOauth2() *schema.Resource {
 		Create: resourceRightScaleOauth2Create,
 
 		Schema: map[string]*schema.Schema{
-			// DEBUG INFO Created for key client_secret. -- Submatch: ["client_secret" "client_secret" ""] at idx 0 -- cmdFlagName: client_secret -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at client_secret because temp_attr wasn't null, which it never will be
-			"client_secret": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-
-			// DEBUG INFO Created for key refresh_token. -- Submatch: ["refresh_token" "refresh_token" ""] at idx 0 -- cmdFlagName: refresh_token -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at refresh_token because temp_attr wasn't null, which it never will be
-			"refresh_token": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-
-			// DEBUG INFO Created for key r_s_version. -- Submatch: ["r_s_version" "r_s_version" ""] at idx 0 -- cmdFlagName: r_s_version -- Operating at root: true
-			// Matched at subMatch[2] == '' -- Operating at root: true
-			// Assigned to parent map at r_s_version because temp_attr wasn't null, which it never will be
-			"r_s_version": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-			},
-
 			// DEBUG INFO Created for key grant_type. -- Submatch: ["grant_type" "grant_type" ""] at idx 0 -- cmdFlagName: grant_type -- Operating at root: true
 			// Matched at subMatch[2] == '' -- Operating at root: true
 			// Assigned to parent map at grant_type because temp_attr wasn't null, which it never will be
@@ -5776,6 +4878,33 @@ func resourceRightScaleOauth2() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+
+			// DEBUG INFO Created for key client_secret. -- Submatch: ["client_secret" "client_secret" ""] at idx 0 -- cmdFlagName: client_secret -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at client_secret because temp_attr wasn't null, which it never will be
+			"client_secret": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			// DEBUG INFO Created for key refresh_token. -- Submatch: ["refresh_token" "refresh_token" ""] at idx 0 -- cmdFlagName: refresh_token -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at refresh_token because temp_attr wasn't null, which it never will be
+			"refresh_token": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			// DEBUG INFO Created for key r_s_version. -- Submatch: ["r_s_version" "r_s_version" ""] at idx 0 -- cmdFlagName: r_s_version -- Operating at root: true
+			// Matched at subMatch[2] == '' -- Operating at root: true
+			// Assigned to parent map at r_s_version because temp_attr wasn't null, which it never will be
+			"r_s_version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -5783,39 +4912,39 @@ func resourceRightScaleOauth2() *schema.Resource {
 func Oauth2SchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
-	if val, ok := d.GetOk("client_secret"); ok {
-		// param_map["client_secret"] = val
-		recursiveSchemaSetValueGet("client_secret", val, param_map)
-		log.Printf("DEBUG Val for attribute was %q", param_map)
-	}
-	if val, ok := d.GetOk("refresh_token"); ok {
-		// param_map["refresh_token"] = val
-		recursiveSchemaSetValueGet("refresh_token", val, param_map)
-		log.Printf("DEBUG Val for attribute was %q", param_map)
-	}
-	if val, ok := d.GetOk("r_s_version"); ok {
-		// param_map["r_s_version"] = val
-		recursiveSchemaSetValueGet("r_s_version", val, param_map)
-		log.Printf("DEBUG Val for attribute was %q", param_map)
-	}
 	if val, ok := d.GetOk("grant_type"); ok {
-		// param_map["grant_type"] = val
-		recursiveSchemaSetValueGet("grant_type", val, param_map)
+		param_map["grant_type"] = val
+		// recursiveSchemaSetValueGet("grant_type", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("account_id"); ok {
-		// param_map["account_id"] = val
-		recursiveSchemaSetValueGet("account_id", val, param_map)
+		param_map["account_id"] = val
+		// recursiveSchemaSetValueGet("account_id", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("client_id"); ok {
-		// param_map["client_id"] = val
-		recursiveSchemaSetValueGet("client_id", val, param_map)
+		param_map["client_id"] = val
+		// recursiveSchemaSetValueGet("client_id", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 	if val, ok := d.GetOk("right_link_version"); ok {
-		// param_map["right_link_version"] = val
-		recursiveSchemaSetValueGet("right_link_version", val, param_map)
+		param_map["right_link_version"] = val
+		// recursiveSchemaSetValueGet("right_link_version", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("client_secret"); ok {
+		param_map["client_secret"] = val
+		// recursiveSchemaSetValueGet("client_secret", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("refresh_token"); ok {
+		param_map["refresh_token"] = val
+		// recursiveSchemaSetValueGet("refresh_token", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	if val, ok := d.GetOk("r_s_version"); ok {
+		param_map["r_s_version"] = val
+		// recursiveSchemaSetValueGet("r_s_version", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -5824,39 +4953,6 @@ func Oauth2SchemaToMap(d *schema.ResourceData) map[string]interface{} {
 
 func Oauth2MapToSchema(d *schema.ResourceData, resMap map[string]interface{}) {
 
-	if depl, ok := d.GetOk("client_secret"); ok {
-		depl_as_map := depl.(map[string]interface{})
-		for resMapKey, resMapValue := range resMap {
-			if _, ok = depl_as_map[resMapKey]; ok {
-				depl_as_map[resMapKey] = resMapValue
-			}
-		}
-		d.Set("client_secret", depl_as_map)
-	} else {
-		log.Printf("[DEBUG] The client_secret property of the Oauth2 resource was not set on read")
-	}
-	if depl, ok := d.GetOk("refresh_token"); ok {
-		depl_as_map := depl.(map[string]interface{})
-		for resMapKey, resMapValue := range resMap {
-			if _, ok = depl_as_map[resMapKey]; ok {
-				depl_as_map[resMapKey] = resMapValue
-			}
-		}
-		d.Set("refresh_token", depl_as_map)
-	} else {
-		log.Printf("[DEBUG] The refresh_token property of the Oauth2 resource was not set on read")
-	}
-	if depl, ok := d.GetOk("r_s_version"); ok {
-		depl_as_map := depl.(map[string]interface{})
-		for resMapKey, resMapValue := range resMap {
-			if _, ok = depl_as_map[resMapKey]; ok {
-				depl_as_map[resMapKey] = resMapValue
-			}
-		}
-		d.Set("r_s_version", depl_as_map)
-	} else {
-		log.Printf("[DEBUG] The r_s_version property of the Oauth2 resource was not set on read")
-	}
 	if depl, ok := d.GetOk("grant_type"); ok {
 		depl_as_map := depl.(map[string]interface{})
 		for resMapKey, resMapValue := range resMap {
@@ -5900,6 +4996,39 @@ func Oauth2MapToSchema(d *schema.ResourceData, resMap map[string]interface{}) {
 		d.Set("right_link_version", depl_as_map)
 	} else {
 		log.Printf("[DEBUG] The right_link_version property of the Oauth2 resource was not set on read")
+	}
+	if depl, ok := d.GetOk("client_secret"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("client_secret", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The client_secret property of the Oauth2 resource was not set on read")
+	}
+	if depl, ok := d.GetOk("refresh_token"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("refresh_token", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The refresh_token property of the Oauth2 resource was not set on read")
+	}
+	if depl, ok := d.GetOk("r_s_version"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("r_s_version", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The r_s_version property of the Oauth2 resource was not set on read")
 	}
 }
 
@@ -5987,28 +5116,8 @@ func resourceRightScalePermission() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at permission because temp_attr wasn't null, which it never will be
 			"permission": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"role_title": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"user_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -6019,8 +5128,8 @@ func PermissionSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("permission"); ok {
-		// param_map["permission"] = val
-		recursiveSchemaSetValueGet("permission", val, param_map)
+		param_map["permission"] = val
+		// recursiveSchemaSetValueGet("permission", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -6157,7 +5266,7 @@ func resourceRightScalePermissionRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// PermissionMapToSchema(d, resource)
+		PermissionMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -6206,34 +5315,8 @@ func resourceRightScalePlacementGroup() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at placement_group because temp_attr wasn't null, which it never will be
 			"placement_group": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -6244,8 +5327,8 @@ func PlacementGroupSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("placement_group"); ok {
-		// param_map["placement_group"] = val
-		recursiveSchemaSetValueGet("placement_group", val, param_map)
+		param_map["placement_group"] = val
+		// recursiveSchemaSetValueGet("placement_group", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -6382,7 +5465,7 @@ func resourceRightScalePlacementGroupRead(d *schema.ResourceData, meta interface
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// PlacementGroupMapToSchema(d, resource)
+		PlacementGroupMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -6425,22 +5508,8 @@ func resourceRightScalePreference() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at preference because temp_attr wasn't null, which it never will be
 			"preference": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"contents": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -6450,8 +5519,8 @@ func PreferenceSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("preference"); ok {
-		// param_map["preference"] = val
-		recursiveSchemaSetValueGet("preference", val, param_map)
+		param_map["preference"] = val
+		// recursiveSchemaSetValueGet("preference", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -6546,7 +5615,7 @@ func resourceRightScalePreferenceRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// PreferenceMapToSchema(d, resource)
+		PreferenceMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -6632,7 +5701,7 @@ func resourceRightScalePublicationRead(d *schema.ResourceData, meta interface{})
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// PublicationMapToSchema(d, resource)
+		PublicationMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -6703,7 +5772,7 @@ func resourceRightScalePublicationLineageRead(d *schema.ResourceData, meta inter
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// PublicationLineageMapToSchema(d, resource)
+		PublicationLineageMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -6760,46 +5829,8 @@ func resourceRightScaleRecurringVolumeAttachment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at recurring_volume_attachment because temp_attr wasn't null, which it never will be
 			"recurring_volume_attachment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"device": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"runnable_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"settings": &schema.Schema{
-							Type:     schema.TypeMap,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"storage_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"volume_type_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -6810,8 +5841,8 @@ func RecurringVolumeAttachmentSchemaToMap(d *schema.ResourceData) map[string]int
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("recurring_volume_attachment"); ok {
-		// param_map["recurring_volume_attachment"] = val
-		recursiveSchemaSetValueGet("recurring_volume_attachment", val, param_map)
+		param_map["recurring_volume_attachment"] = val
+		// recursiveSchemaSetValueGet("recurring_volume_attachment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -6948,7 +5979,7 @@ func resourceRightScaleRecurringVolumeAttachmentRead(d *schema.ResourceData, met
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RecurringVolumeAttachmentMapToSchema(d, resource)
+		RecurringVolumeAttachmentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -7073,134 +6104,8 @@ func resourceRightScaleRepository() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at repository because temp_attr wasn't null, which it never will be
 			"repository": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO Child at parent[repository][asset_paths] -- Submatch: ["repository[asset_paths]" "repository" "asset_paths"] at idx 0 -- cmdFlagName: repository[asset_paths][cookbooks][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["repository[asset_paths]" "repository" "asset_paths"] -- CmdFlag: repository[asset_paths][cookbooks][]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[asset_paths]" "repository" "asset_paths"] -- CmdFlag: repository[asset_paths][cookbooks][]
-						"asset_paths": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was cookbooks -- Submatch: ["[cookbooks]" "" "cookbooks"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cookbooks]" "" "cookbooks"] -- CmdFlag: repository[asset_paths][cookbooks][]
-									// Discovered at key cookbooks of parent map and updating -- Submatch: ["[cookbooks]" "" "cookbooks"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cookbooks]" "" "cookbooks"] -- CmdFlag: repository[asset_paths][cookbooks][]
-									"cookbooks": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[cookbooks][cookbooks] -- Submatch: ["[cookbooks]" "" "cookbooks"] at idx 1 -- cmdFlagName: repository[asset_paths][cookbooks][]
-												"cookbooks": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"auto_import": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"commit_reference": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[repository][credentials] -- Submatch: ["repository[credentials]" "repository" "credentials"] at idx 0 -- cmdFlagName: repository[credentials][password]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][password]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][username]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][ssh_key]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][username]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][password]
-						// (At Root) My children became the parent map. -- Submatch: ["repository[credentials]" "repository" "credentials"] -- CmdFlag: repository[credentials][ssh_key]
-						"credentials": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key password. -- Submatch: ["[password]" "" "password"] at idx 1 -- cmdFlagName: repository[credentials][password] -- Operating at root: false
-									// Assigned to parent map at password because temp_attr wasn't null, which it never will be
-									// Discovered at key password of parent map and updating -- Submatch: ["[password]" "" "password"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at password because temp_attr wasn't null, which it never will be
-									"password": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ssh_key. -- Submatch: ["[ssh_key]" "" "ssh_key"] at idx 1 -- cmdFlagName: repository[credentials][ssh_key] -- Operating at root: false
-									// Assigned to parent map at ssh_key because temp_attr wasn't null, which it never will be
-									// Discovered at key ssh_key of parent map and updating -- Submatch: ["[ssh_key]" "" "ssh_key"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at ssh_key because temp_attr wasn't null, which it never will be
-									"ssh_key": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key username. -- Submatch: ["[username]" "" "username"] at idx 1 -- cmdFlagName: repository[credentials][username] -- Operating at root: false
-									// Assigned to parent map at username because temp_attr wasn't null, which it never will be
-									// Discovered at key username of parent map and updating -- Submatch: ["[username]" "" "username"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at username because temp_attr wasn't null, which it never will be
-									"username": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"source": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"source_type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -7210,8 +6115,8 @@ func RepositorySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("repository"); ok {
-		// param_map["repository"] = val
-		recursiveSchemaSetValueGet("repository", val, param_map)
+		param_map["repository"] = val
+		// recursiveSchemaSetValueGet("repository", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -7348,7 +6253,7 @@ func resourceRightScaleRepositoryRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RepositoryMapToSchema(d, resource)
+		RepositoryMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -7428,7 +6333,7 @@ func resourceRightScaleRepositoryAssetRead(d *schema.ResourceData, meta interfac
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RepositoryAssetMapToSchema(d, resource)
+		RepositoryAssetMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -7516,34 +6421,8 @@ func resourceRightScaleRightScript() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at right_script because temp_attr wasn't null, which it never will be
 			"right_script": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"source": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -7553,8 +6432,8 @@ func RightScriptSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("right_script"); ok {
-		// param_map["right_script"] = val
-		recursiveSchemaSetValueGet("right_script", val, param_map)
+		param_map["right_script"] = val
+		// recursiveSchemaSetValueGet("right_script", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -7691,7 +6570,7 @@ func resourceRightScaleRightScriptRead(d *schema.ResourceData, meta interface{})
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RightScriptMapToSchema(d, resource)
+		RightScriptMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -7758,28 +6637,8 @@ func resourceRightScaleRightScriptAttachment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at right_script_attachment because temp_attr wasn't null, which it never will be
 			"right_script_attachment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"content": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"filename": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -7789,8 +6648,8 @@ func RightScriptAttachmentSchemaToMap(d *schema.ResourceData) map[string]interfa
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("right_script_attachment"); ok {
-		// param_map["right_script_attachment"] = val
-		recursiveSchemaSetValueGet("right_script_attachment", val, param_map)
+		param_map["right_script_attachment"] = val
+		// recursiveSchemaSetValueGet("right_script_attachment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -7927,7 +6786,7 @@ func resourceRightScaleRightScriptAttachmentRead(d *schema.ResourceData, meta in
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RightScriptAttachmentMapToSchema(d, resource)
+		RightScriptAttachmentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -8026,100 +6885,8 @@ func resourceRightScaleRoute() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at route because temp_attr wasn't null, which it never will be
 			"route": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO Child at parent[route][cloud_specific_attributes] -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] at idx 0 -- cmdFlagName: route[cloud_specific_attributes][instance_tags][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] -- CmdFlag: route[cloud_specific_attributes][instance_tags][]
-						// (At Root) My children became the parent map. -- Submatch: ["route[cloud_specific_attributes]" "route" "cloud_specific_attributes"] -- CmdFlag: route[cloud_specific_attributes][priority]
-						"cloud_specific_attributes": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was instance_tags -- Submatch: ["[instance_tags]" "" "instance_tags"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[instance_tags]" "" "instance_tags"] -- CmdFlag: route[cloud_specific_attributes][instance_tags][]
-									"instance_tags": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[instance_tags][instance_tags] -- Submatch: ["[instance_tags]" "" "instance_tags"] at idx 1 -- cmdFlagName: route[cloud_specific_attributes][instance_tags][]
-												"instance_tags": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key priority. -- Submatch: ["[priority]" "" "priority"] at idx 1 -- cmdFlagName: route[cloud_specific_attributes][priority] -- Operating at root: false
-									// Assigned to parent map at priority because temp_attr wasn't null, which it never will be
-									"priority": &schema.Schema{
-										Type:     schema.TypeInt,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"destination_cidr_block": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"next_hop_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"next_hop_ip": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"next_hop_type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"next_hop_url": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"route_table_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -8129,8 +6896,8 @@ func RouteSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("route"); ok {
-		// param_map["route"] = val
-		recursiveSchemaSetValueGet("route", val, param_map)
+		param_map["route"] = val
+		// recursiveSchemaSetValueGet("route", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -8267,7 +7034,7 @@ func resourceRightScaleRouteRead(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RouteMapToSchema(d, resource)
+		RouteMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -8339,40 +7106,8 @@ func resourceRightScaleRouteTable() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at route_table because temp_attr wasn't null, which it never will be
 			"route_table": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cloud_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -8382,8 +7117,8 @@ func RouteTableSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("route_table"); ok {
-		// param_map["route_table"] = val
-		recursiveSchemaSetValueGet("route_table", val, param_map)
+		param_map["route_table"] = val
+		// recursiveSchemaSetValueGet("route_table", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -8520,7 +7255,7 @@ func resourceRightScaleRouteTableRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RouteTableMapToSchema(d, resource)
+		RouteTableMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -8581,40 +7316,8 @@ func resourceRightScaleRunnableBinding() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at runnable_binding because temp_attr wasn't null, which it never will be
 			"runnable_binding": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"position": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"recipe": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"right_script_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"sequence": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -8625,8 +7328,8 @@ func RunnableBindingSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("runnable_binding"); ok {
-		// param_map["runnable_binding"] = val
-		recursiveSchemaSetValueGet("runnable_binding", val, param_map)
+		param_map["runnable_binding"] = val
+		// recursiveSchemaSetValueGet("runnable_binding", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -8763,7 +7466,7 @@ func resourceRightScaleRunnableBindingRead(d *schema.ResourceData, meta interfac
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// RunnableBindingMapToSchema(d, resource)
+		RunnableBindingMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -8840,34 +7543,8 @@ func resourceRightScaleSecurityGroup() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at security_group because temp_attr wasn't null, which it never will be
 			"security_group": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -8878,8 +7555,8 @@ func SecurityGroupSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("security_group"); ok {
-		// param_map["security_group"] = val
-		recursiveSchemaSetValueGet("security_group", val, param_map)
+		param_map["security_group"] = val
+		// recursiveSchemaSetValueGet("security_group", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -9016,7 +7693,7 @@ func resourceRightScaleSecurityGroupRead(d *schema.ResourceData, meta interface{
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// SecurityGroupMapToSchema(d, resource)
+		SecurityGroupMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -9099,106 +7776,8 @@ func resourceRightScaleSecurityGroupRule() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at security_group_rule because temp_attr wasn't null, which it never will be
 			"security_group_rule": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cidr_ips": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"direction": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"group_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"group_owner": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"protocol": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[security_group_rule][protocol_details] -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] at idx 0 -- cmdFlagName: security_group_rule[protocol_details][start_port]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] -- CmdFlag: security_group_rule[protocol_details][start_port]
-						// (At Root) My children became the parent map. -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] -- CmdFlag: security_group_rule[protocol_details][icmp_type]
-						// (At Root) My children became the parent map. -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] -- CmdFlag: security_group_rule[protocol_details][icmp_code]
-						// (At Root) My children became the parent map. -- Submatch: ["security_group_rule[protocol_details]" "security_group_rule" "protocol_details"] -- CmdFlag: security_group_rule[protocol_details][end_port]
-						"protocol_details": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key end_port. -- Submatch: ["[end_port]" "" "end_port"] at idx 1 -- cmdFlagName: security_group_rule[protocol_details][end_port] -- Operating at root: false
-									// Assigned to parent map at end_port because temp_attr wasn't null, which it never will be
-									"end_port": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key icmp_code. -- Submatch: ["[icmp_code]" "" "icmp_code"] at idx 1 -- cmdFlagName: security_group_rule[protocol_details][icmp_code] -- Operating at root: false
-									// Assigned to parent map at icmp_code because temp_attr wasn't null, which it never will be
-									"icmp_code": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key icmp_type. -- Submatch: ["[icmp_type]" "" "icmp_type"] at idx 1 -- cmdFlagName: security_group_rule[protocol_details][icmp_type] -- Operating at root: false
-									// Assigned to parent map at icmp_type because temp_attr wasn't null, which it never will be
-									"icmp_type": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key start_port. -- Submatch: ["[start_port]" "" "start_port"] at idx 1 -- cmdFlagName: security_group_rule[protocol_details][start_port] -- Operating at root: false
-									// Assigned to parent map at start_port because temp_attr wasn't null, which it never will be
-									"start_port": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"security_group_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"source_type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -9208,8 +7787,8 @@ func SecurityGroupRuleSchemaToMap(d *schema.ResourceData) map[string]interface{}
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("security_group_rule"); ok {
-		// param_map["security_group_rule"] = val
-		recursiveSchemaSetValueGet("security_group_rule", val, param_map)
+		param_map["security_group_rule"] = val
+		// recursiveSchemaSetValueGet("security_group_rule", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -9346,7 +7925,7 @@ func resourceRightScaleSecurityGroupRuleRead(d *schema.ResourceData, meta interf
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// SecurityGroupRuleMapToSchema(d, resource)
+		SecurityGroupRuleMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -9552,442 +8131,8 @@ func resourceRightScaleServer() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at server because temp_attr wasn't null, which it never will be
 			"server": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"automatic_instance_store_mapping": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[server][instance] -- Submatch: ["server[instance]" "server" "instance"] at idx 0 -- cmdFlagName: server[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][automatic_instance_store_mapping]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_performance]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][iam_instance_profile]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_type_uid]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][local_ssd_interface]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][delete_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][create_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][placement_tenancy]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_size]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][local_ssd_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][keep_alive_url]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][max_spot_price]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][keep_alive_id]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][pricing_type]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][preemptible]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][memory_mb]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][num_cores]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][disk_gb]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][associate_public_ip_address]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][multi_cloud_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][ip_forwarding_enabled]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][security_group_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][placement_group_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][server_template_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][instance_type_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][ramdisk_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][private_ip_address]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][kernel_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][inputs][][value]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][inputs]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][datacenter_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][inputs][][name]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][subnet_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][ssh_key_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][user_data]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][delete_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["server[instance]" "server" "instance"] -- CmdFlag: server[instance][cloud_specific_attributes][create_boot_volume]
-						"instance": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key associate_public_ip_address. -- Submatch: ["[associate_public_ip_address]" "" "associate_public_ip_address"] at idx 1 -- cmdFlagName: server[instance][associate_public_ip_address] -- Operating at root: false
-									// Assigned to parent map at associate_public_ip_address because temp_attr wasn't null, which it never will be
-									"associate_public_ip_address": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key cloud_href. -- Submatch: ["[cloud_href]" "" "cloud_href"] at idx 1 -- cmdFlagName: server[instance][cloud_href] -- Operating at root: false
-									// Assigned to parent map at cloud_href because temp_attr wasn't null, which it never will be
-									"cloud_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was cloud_specific_attributes -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][automatic_instance_store_mapping]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_performance]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][iam_instance_profile]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_type_uid]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][local_ssd_interface]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][delete_boot_volume]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][create_boot_volume]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][placement_tenancy]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][root_volume_size]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][local_ssd_count]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][keep_alive_url]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][max_spot_price]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][keep_alive_id]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][pricing_type]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][preemptible]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][memory_mb]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][num_cores]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][disk_gb]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][delete_boot_volume]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server[instance][cloud_specific_attributes][create_boot_volume]
-									"cloud_specific_attributes": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
-												// Assigned to parent map at automatic_instance_store_mapping because temp_attr wasn't null, which it never will be
-												"automatic_instance_store_mapping": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Child at parent[cloud_specific_attributes][cloud_specific_attributes] -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- cmdFlagName: server[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-												"cloud_specific_attributes": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key create_boot_volume. -- Submatch: ["[create_boot_volume]" "" "create_boot_volume"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][create_boot_volume] -- Operating at root: false
-												// Assigned to parent map at create_boot_volume because temp_attr wasn't null, which it never will be
-												// Discovered at key create_boot_volume of parent map and updating -- Submatch: ["[create_boot_volume]" "" "create_boot_volume"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at create_boot_volume because temp_attr wasn't null, which it never will be
-												"create_boot_volume": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key create_default_port_forwarding_rules. -- Submatch: ["[create_default_port_forwarding_rules]" "" "create_default_port_forwarding_rules"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][create_default_port_forwarding_rules] -- Operating at root: false
-												// Assigned to parent map at create_default_port_forwarding_rules because temp_attr wasn't null, which it never will be
-												"create_default_port_forwarding_rules": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key delete_boot_volume. -- Submatch: ["[delete_boot_volume]" "" "delete_boot_volume"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][delete_boot_volume] -- Operating at root: false
-												// Assigned to parent map at delete_boot_volume because temp_attr wasn't null, which it never will be
-												// Discovered at key delete_boot_volume of parent map and updating -- Submatch: ["[delete_boot_volume]" "" "delete_boot_volume"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at delete_boot_volume because temp_attr wasn't null, which it never will be
-												"delete_boot_volume": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key disk_gb. -- Submatch: ["[disk_gb]" "" "disk_gb"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][disk_gb] -- Operating at root: false
-												// Assigned to parent map at disk_gb because temp_attr wasn't null, which it never will be
-												"disk_gb": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key iam_instance_profile. -- Submatch: ["[iam_instance_profile]" "" "iam_instance_profile"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][iam_instance_profile] -- Operating at root: false
-												// Assigned to parent map at iam_instance_profile because temp_attr wasn't null, which it never will be
-												"iam_instance_profile": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key keep_alive_id. -- Submatch: ["[keep_alive_id]" "" "keep_alive_id"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][keep_alive_id] -- Operating at root: false
-												// Assigned to parent map at keep_alive_id because temp_attr wasn't null, which it never will be
-												"keep_alive_id": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key keep_alive_url. -- Submatch: ["[keep_alive_url]" "" "keep_alive_url"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][keep_alive_url] -- Operating at root: false
-												// Assigned to parent map at keep_alive_url because temp_attr wasn't null, which it never will be
-												"keep_alive_url": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key local_ssd_count. -- Submatch: ["[local_ssd_count]" "" "local_ssd_count"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][local_ssd_count] -- Operating at root: false
-												// Assigned to parent map at local_ssd_count because temp_attr wasn't null, which it never will be
-												"local_ssd_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key local_ssd_interface. -- Submatch: ["[local_ssd_interface]" "" "local_ssd_interface"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][local_ssd_interface] -- Operating at root: false
-												// Assigned to parent map at local_ssd_interface because temp_attr wasn't null, which it never will be
-												"local_ssd_interface": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key max_spot_price. -- Submatch: ["[max_spot_price]" "" "max_spot_price"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][max_spot_price] -- Operating at root: false
-												// Assigned to parent map at max_spot_price because temp_attr wasn't null, which it never will be
-												"max_spot_price": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key memory_mb. -- Submatch: ["[memory_mb]" "" "memory_mb"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][memory_mb] -- Operating at root: false
-												// Assigned to parent map at memory_mb because temp_attr wasn't null, which it never will be
-												"memory_mb": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key num_cores. -- Submatch: ["[num_cores]" "" "num_cores"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][num_cores] -- Operating at root: false
-												// Assigned to parent map at num_cores because temp_attr wasn't null, which it never will be
-												"num_cores": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key placement_tenancy. -- Submatch: ["[placement_tenancy]" "" "placement_tenancy"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][placement_tenancy] -- Operating at root: false
-												// Assigned to parent map at placement_tenancy because temp_attr wasn't null, which it never will be
-												"placement_tenancy": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key preemptible. -- Submatch: ["[preemptible]" "" "preemptible"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][preemptible] -- Operating at root: false
-												// Assigned to parent map at preemptible because temp_attr wasn't null, which it never will be
-												"preemptible": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key pricing_type. -- Submatch: ["[pricing_type]" "" "pricing_type"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][pricing_type] -- Operating at root: false
-												// Assigned to parent map at pricing_type because temp_attr wasn't null, which it never will be
-												"pricing_type": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_performance. -- Submatch: ["[root_volume_performance]" "" "root_volume_performance"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][root_volume_performance] -- Operating at root: false
-												// Assigned to parent map at root_volume_performance because temp_attr wasn't null, which it never will be
-												"root_volume_performance": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_size. -- Submatch: ["[root_volume_size]" "" "root_volume_size"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][root_volume_size] -- Operating at root: false
-												// Assigned to parent map at root_volume_size because temp_attr wasn't null, which it never will be
-												"root_volume_size": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_type_uid. -- Submatch: ["[root_volume_type_uid]" "" "root_volume_type_uid"] at idx 2 -- cmdFlagName: server[instance][cloud_specific_attributes][root_volume_type_uid] -- Operating at root: false
-												// Assigned to parent map at root_volume_type_uid because temp_attr wasn't null, which it never will be
-												"root_volume_type_uid": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key datacenter_href. -- Submatch: ["[datacenter_href]" "" "datacenter_href"] at idx 1 -- cmdFlagName: server[instance][datacenter_href] -- Operating at root: false
-									// Assigned to parent map at datacenter_href because temp_attr wasn't null, which it never will be
-									"datacenter_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key image_href. -- Submatch: ["[image_href]" "" "image_href"] at idx 1 -- cmdFlagName: server[instance][image_href] -- Operating at root: false
-									// Assigned to parent map at image_href because temp_attr wasn't null, which it never will be
-									"image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was inputs -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[inputs]" "" "inputs"] -- CmdFlag: server[instance][inputs][][value]
-									// Discovered at key inputs of parent map and updating -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at inputs because temp_attr wasn't null, which it never will be
-									// Discovered at key inputs of parent map and updating -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[inputs]" "" "inputs"] -- CmdFlag: server[instance][inputs][][name]
-									"inputs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[inputs][inputs] -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- cmdFlagName: server[instance][inputs][][value]
-												"inputs": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key name. -- Submatch: ["[name]" "" "name"] at idx 3 -- cmdFlagName: server[instance][inputs][][name] -- Operating at root: false
-												// Assigned to parent map at name because temp_attr wasn't null, which it never will be
-												"name": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key value. -- Submatch: ["[value]" "" "value"] at idx 3 -- cmdFlagName: server[instance][inputs][][value] -- Operating at root: false
-												// Assigned to parent map at value because temp_attr wasn't null, which it never will be
-												"value": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key instance_type_href. -- Submatch: ["[instance_type_href]" "" "instance_type_href"] at idx 1 -- cmdFlagName: server[instance][instance_type_href] -- Operating at root: false
-									// Assigned to parent map at instance_type_href because temp_attr wasn't null, which it never will be
-									"instance_type_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ip_forwarding_enabled. -- Submatch: ["[ip_forwarding_enabled]" "" "ip_forwarding_enabled"] at idx 1 -- cmdFlagName: server[instance][ip_forwarding_enabled] -- Operating at root: false
-									// Assigned to parent map at ip_forwarding_enabled because temp_attr wasn't null, which it never will be
-									"ip_forwarding_enabled": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key kernel_image_href. -- Submatch: ["[kernel_image_href]" "" "kernel_image_href"] at idx 1 -- cmdFlagName: server[instance][kernel_image_href] -- Operating at root: false
-									// Assigned to parent map at kernel_image_href because temp_attr wasn't null, which it never will be
-									"kernel_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key multi_cloud_image_href. -- Submatch: ["[multi_cloud_image_href]" "" "multi_cloud_image_href"] at idx 1 -- cmdFlagName: server[instance][multi_cloud_image_href] -- Operating at root: false
-									// Assigned to parent map at multi_cloud_image_href because temp_attr wasn't null, which it never will be
-									"multi_cloud_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key placement_group_href. -- Submatch: ["[placement_group_href]" "" "placement_group_href"] at idx 1 -- cmdFlagName: server[instance][placement_group_href] -- Operating at root: false
-									// Assigned to parent map at placement_group_href because temp_attr wasn't null, which it never will be
-									"placement_group_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key private_ip_address. -- Submatch: ["[private_ip_address]" "" "private_ip_address"] at idx 1 -- cmdFlagName: server[instance][private_ip_address] -- Operating at root: false
-									// Assigned to parent map at private_ip_address because temp_attr wasn't null, which it never will be
-									"private_ip_address": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ramdisk_image_href. -- Submatch: ["[ramdisk_image_href]" "" "ramdisk_image_href"] at idx 1 -- cmdFlagName: server[instance][ramdisk_image_href] -- Operating at root: false
-									// Assigned to parent map at ramdisk_image_href because temp_attr wasn't null, which it never will be
-									"ramdisk_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was security_group_hrefs -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] -- CmdFlag: server[instance][security_group_hrefs][]
-									"security_group_hrefs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[security_group_hrefs][security_group_hrefs] -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- cmdFlagName: server[instance][security_group_hrefs][]
-												"security_group_hrefs": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key server_template_href. -- Submatch: ["[server_template_href]" "" "server_template_href"] at idx 1 -- cmdFlagName: server[instance][server_template_href] -- Operating at root: false
-									// Assigned to parent map at server_template_href because temp_attr wasn't null, which it never will be
-									"server_template_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									// DEBUG INFO Created for key ssh_key_href. -- Submatch: ["[ssh_key_href]" "" "ssh_key_href"] at idx 1 -- cmdFlagName: server[instance][ssh_key_href] -- Operating at root: false
-									// Assigned to parent map at ssh_key_href because temp_attr wasn't null, which it never will be
-									"ssh_key_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was subnet_hrefs -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] -- CmdFlag: server[instance][subnet_hrefs][]
-									"subnet_hrefs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[subnet_hrefs][subnet_hrefs] -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- cmdFlagName: server[instance][subnet_hrefs][]
-												"subnet_hrefs": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key user_data. -- Submatch: ["[user_data]" "" "user_data"] at idx 1 -- cmdFlagName: server[instance][user_data] -- Operating at root: false
-									// Assigned to parent map at user_data because temp_attr wasn't null, which it never will be
-									"user_data": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"optimized": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"root_volume_size": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -9997,8 +8142,8 @@ func ServerSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server"); ok {
-		// param_map["server"] = val
-		recursiveSchemaSetValueGet("server", val, param_map)
+		param_map["server"] = val
+		// recursiveSchemaSetValueGet("server", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -10135,7 +8280,7 @@ func resourceRightScaleServerRead(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// ServerMapToSchema(d, resource)
+		ServerMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -10356,842 +8501,8 @@ func resourceRightScaleServerArray() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at server_array because temp_attr wasn't null, which it never will be
 			"server_array": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"array_type": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[server_array][datacenter_policy] -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] at idx 0 -- cmdFlagName: server_array[datacenter_policy][][datacenter_href]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][datacenter_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][weight]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][max]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][datacenter_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][weight]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[datacenter_policy]" "server_array" "datacenter_policy"] -- CmdFlag: server_array[datacenter_policy][][max]
-						"datacenter_policy": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key datacenter_href. -- Submatch: ["[datacenter_href]" "" "datacenter_href"] at idx 2 -- cmdFlagName: server_array[datacenter_policy][][datacenter_href] -- Operating at root: false
-									// Assigned to parent map at datacenter_href because temp_attr wasn't null, which it never will be
-									// Discovered at key datacenter_href of parent map and updating -- Submatch: ["[datacenter_href]" "" "datacenter_href"] at idx 2 -- Operating at root: false
-									// Assigned to parent map at datacenter_href because temp_attr wasn't null, which it never will be
-									"datacenter_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key max. -- Submatch: ["[max]" "" "max"] at idx 2 -- cmdFlagName: server_array[datacenter_policy][][max] -- Operating at root: false
-									// Assigned to parent map at max because temp_attr wasn't null, which it never will be
-									// Discovered at key max of parent map and updating -- Submatch: ["[max]" "" "max"] at idx 2 -- Operating at root: false
-									// Assigned to parent map at max because temp_attr wasn't null, which it never will be
-									"max": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key weight. -- Submatch: ["[weight]" "" "weight"] at idx 2 -- cmdFlagName: server_array[datacenter_policy][][weight] -- Operating at root: false
-									// Assigned to parent map at weight because temp_attr wasn't null, which it never will be
-									// Discovered at key weight of parent map and updating -- Submatch: ["[weight]" "" "weight"] at idx 2 -- Operating at root: false
-									// Assigned to parent map at weight because temp_attr wasn't null, which it never will be
-									"weight": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO Child at parent[server_array][elasticity_params] -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] at idx 0 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][collect_audit_entries]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][decision_threshold]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_calm_time]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_down_by]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][max_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][min_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_up_by]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][bounds][min_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][bounds][max_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][time]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][day]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][collect_audit_entries]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][decision_threshold]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_calm_time]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_down_by]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][max_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][min_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][pacing][resize_up_by]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][bounds][min_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][bounds][max_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][time]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[elasticity_params]" "server_array" "elasticity_params"] -- CmdFlag: server_array[elasticity_params][schedule][][day]
-						"elasticity_params": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was alert_specific_params -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
-									// Discovered at key alert_specific_params of parent map and updating -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][decision_threshold]
-									// Discovered at key alert_specific_params of parent map and updating -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
-									// Discovered at key alert_specific_params of parent map and updating -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] -- CmdFlag: server_array[elasticity_params][alert_specific_params][decision_threshold]
-									"alert_specific_params": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[alert_specific_params][alert_specific_params] -- Submatch: ["[alert_specific_params]" "" "alert_specific_params"] at idx 1 -- cmdFlagName: server_array[elasticity_params][alert_specific_params][voters_tag_predicate]
-												"alert_specific_params": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key decision_threshold. -- Submatch: ["[decision_threshold]" "" "decision_threshold"] at idx 2 -- cmdFlagName: server_array[elasticity_params][alert_specific_params][decision_threshold] -- Operating at root: false
-												// Assigned to parent map at decision_threshold because temp_attr wasn't null, which it never will be
-												// Discovered at key decision_threshold of parent map and updating -- Submatch: ["[decision_threshold]" "" "decision_threshold"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at decision_threshold because temp_attr wasn't null, which it never will be
-												"decision_threshold": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key voters_tag_predicate. -- Submatch: ["[voters_tag_predicate]" "" "voters_tag_predicate"] at idx 2 -- cmdFlagName: server_array[elasticity_params][alert_specific_params][voters_tag_predicate] -- Operating at root: false
-												// Assigned to parent map at voters_tag_predicate because temp_attr wasn't null, which it never will be
-												// Discovered at key voters_tag_predicate of parent map and updating -- Submatch: ["[voters_tag_predicate]" "" "voters_tag_predicate"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at voters_tag_predicate because temp_attr wasn't null, which it never will be
-												"voters_tag_predicate": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was bounds -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[bounds]" "" "bounds"] -- CmdFlag: server_array[elasticity_params][bounds][min_count]
-									// Discovered at key bounds of parent map and updating -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[bounds]" "" "bounds"] -- CmdFlag: server_array[elasticity_params][bounds][max_count]
-									// Discovered at key bounds of parent map and updating -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[bounds]" "" "bounds"] -- CmdFlag: server_array[elasticity_params][bounds][min_count]
-									// Discovered at key bounds of parent map and updating -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[bounds]" "" "bounds"] -- CmdFlag: server_array[elasticity_params][bounds][max_count]
-									"bounds": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[bounds][bounds] -- Submatch: ["[bounds]" "" "bounds"] at idx 1 -- cmdFlagName: server_array[elasticity_params][bounds][min_count]
-												"bounds": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key max_count. -- Submatch: ["[max_count]" "" "max_count"] at idx 2 -- cmdFlagName: server_array[elasticity_params][bounds][max_count] -- Operating at root: false
-												// Assigned to parent map at max_count because temp_attr wasn't null, which it never will be
-												// Discovered at key max_count of parent map and updating -- Submatch: ["[max_count]" "" "max_count"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at max_count because temp_attr wasn't null, which it never will be
-												"max_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key min_count. -- Submatch: ["[min_count]" "" "min_count"] at idx 2 -- cmdFlagName: server_array[elasticity_params][bounds][min_count] -- Operating at root: false
-												// Assigned to parent map at min_count because temp_attr wasn't null, which it never will be
-												// Discovered at key min_count of parent map and updating -- Submatch: ["[min_count]" "" "min_count"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at min_count because temp_attr wasn't null, which it never will be
-												"min_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was pacing -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_calm_time]
-									// Discovered at key pacing of parent map and updating -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_down_by]
-									// Discovered at key pacing of parent map and updating -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_up_by]
-									// Discovered at key pacing of parent map and updating -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_calm_time]
-									// Discovered at key pacing of parent map and updating -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_down_by]
-									// Discovered at key pacing of parent map and updating -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[pacing]" "" "pacing"] -- CmdFlag: server_array[elasticity_params][pacing][resize_up_by]
-									"pacing": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[pacing][pacing] -- Submatch: ["[pacing]" "" "pacing"] at idx 1 -- cmdFlagName: server_array[elasticity_params][pacing][resize_calm_time]
-												"pacing": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key resize_calm_time. -- Submatch: ["[resize_calm_time]" "" "resize_calm_time"] at idx 2 -- cmdFlagName: server_array[elasticity_params][pacing][resize_calm_time] -- Operating at root: false
-												// Assigned to parent map at resize_calm_time because temp_attr wasn't null, which it never will be
-												// Discovered at key resize_calm_time of parent map and updating -- Submatch: ["[resize_calm_time]" "" "resize_calm_time"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at resize_calm_time because temp_attr wasn't null, which it never will be
-												"resize_calm_time": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key resize_down_by. -- Submatch: ["[resize_down_by]" "" "resize_down_by"] at idx 2 -- cmdFlagName: server_array[elasticity_params][pacing][resize_down_by] -- Operating at root: false
-												// Assigned to parent map at resize_down_by because temp_attr wasn't null, which it never will be
-												// Discovered at key resize_down_by of parent map and updating -- Submatch: ["[resize_down_by]" "" "resize_down_by"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at resize_down_by because temp_attr wasn't null, which it never will be
-												"resize_down_by": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key resize_up_by. -- Submatch: ["[resize_up_by]" "" "resize_up_by"] at idx 2 -- cmdFlagName: server_array[elasticity_params][pacing][resize_up_by] -- Operating at root: false
-												// Assigned to parent map at resize_up_by because temp_attr wasn't null, which it never will be
-												// Discovered at key resize_up_by of parent map and updating -- Submatch: ["[resize_up_by]" "" "resize_up_by"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at resize_up_by because temp_attr wasn't null, which it never will be
-												"resize_up_by": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was queue_specific_params -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][collect_audit_entries]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][collect_audit_entries]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-									// Discovered at key queue_specific_params of parent map and updating -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-									"queue_specific_params": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Created for key collect_audit_entries. -- Submatch: ["[collect_audit_entries]" "" "collect_audit_entries"] at idx 2 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][collect_audit_entries] -- Operating at root: false
-												// Assigned to parent map at collect_audit_entries because temp_attr wasn't null, which it never will be
-												// Discovered at key collect_audit_entries of parent map and updating -- Submatch: ["[collect_audit_entries]" "" "collect_audit_entries"] at idx 2 -- Operating at root: false
-												// Assigned to parent map at collect_audit_entries because temp_attr wasn't null, which it never will be
-												"collect_audit_entries": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was item_age -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-												// Discovered at key item_age of parent map and updating -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-												// Discovered at key item_age of parent map and updating -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-												// Discovered at key item_age of parent map and updating -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-												// Discovered at key item_age of parent map and updating -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][max_age]
-												// Discovered at key item_age of parent map and updating -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[item_age]" "" "item_age"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][item_age][regexp]
-												"item_age": &schema.Schema{
-													Type:     schema.TypeSet,
-													Optional: true,
-													Elem: &schema.Resource{
-														Schema: map[string]*schema.Schema{
-															// DEBUG INFO Created for key algorithm. -- Submatch: ["[algorithm]" "" "algorithm"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][item_age][algorithm] -- Operating at root: false
-															// Assigned to parent map at algorithm because temp_attr wasn't null, which it never will be
-															// Discovered at key algorithm of parent map and updating -- Submatch: ["[algorithm]" "" "algorithm"] at idx 3 -- Operating at root: false
-															// Assigned to parent map at algorithm because temp_attr wasn't null, which it never will be
-															"algorithm": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-															// DEBUG INFO Child at parent[item_age][item_age] -- Submatch: ["[item_age]" "" "item_age"] at idx 2 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][item_age][algorithm]
-															"item_age": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-															// DEBUG INFO Created for key max_age. -- Submatch: ["[max_age]" "" "max_age"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][item_age][max_age] -- Operating at root: false
-															// Assigned to parent map at max_age because temp_attr wasn't null, which it never will be
-															// Discovered at key max_age of parent map and updating -- Submatch: ["[max_age]" "" "max_age"] at idx 3 -- Operating at root: false
-															// Assigned to parent map at max_age because temp_attr wasn't null, which it never will be
-															"max_age": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-															// DEBUG INFO Created for key regexp. -- Submatch: ["[regexp]" "" "regexp"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][item_age][regexp] -- Operating at root: false
-															// Assigned to parent map at regexp because temp_attr wasn't null, which it never will be
-															// Discovered at key regexp of parent map and updating -- Submatch: ["[regexp]" "" "regexp"] at idx 3 -- Operating at root: false
-															// Assigned to parent map at regexp because temp_attr wasn't null, which it never will be
-															"regexp": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-														},
-													},
-													Set: func(v interface{}) int {
-														// there can be only one root device; no need to hash anything
-														return 0
-													},
-												},
-												// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was queue_size -- Submatch: ["[queue_size]" "" "queue_size"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[queue_size]" "" "queue_size"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-												// Discovered at key queue_size of parent map and updating -- Submatch: ["[queue_size]" "" "queue_size"] at idx 2 -- Operating at root: false
-												// (Below Root) My children became the parent map. -- Submatch: ["[queue_size]" "" "queue_size"] -- CmdFlag: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-												"queue_size": &schema.Schema{
-													Type:     schema.TypeSet,
-													Optional: true,
-													Elem: &schema.Resource{
-														Schema: map[string]*schema.Schema{
-															// DEBUG INFO Created for key items_per_instance. -- Submatch: ["[items_per_instance]" "" "items_per_instance"] at idx 3 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance] -- Operating at root: false
-															// Assigned to parent map at items_per_instance because temp_attr wasn't null, which it never will be
-															// Discovered at key items_per_instance of parent map and updating -- Submatch: ["[items_per_instance]" "" "items_per_instance"] at idx 3 -- Operating at root: false
-															// Assigned to parent map at items_per_instance because temp_attr wasn't null, which it never will be
-															"items_per_instance": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-															// DEBUG INFO Child at parent[queue_size][queue_size] -- Submatch: ["[queue_size]" "" "queue_size"] at idx 2 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-															"queue_size": &schema.Schema{
-																Type:     schema.TypeString,
-																Optional: true,
-															},
-														},
-													},
-													Set: func(v interface{}) int {
-														// there can be only one root device; no need to hash anything
-														return 0
-													},
-												},
-												// DEBUG INFO Child at parent[queue_specific_params][queue_specific_params] -- Submatch: ["[queue_specific_params]" "" "queue_specific_params"] at idx 1 -- cmdFlagName: server_array[elasticity_params][queue_specific_params][queue_size][items_per_instance]
-												"queue_specific_params": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was schedule -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][max_count]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][min_count]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][time]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][day]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][max_count]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][min_count]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][time]
-									// Discovered at key schedule of parent map and updating -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[schedule]" "" "schedule"] -- CmdFlag: server_array[elasticity_params][schedule][][day]
-									"schedule": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Created for key day. -- Submatch: ["[day]" "" "day"] at idx 3 -- cmdFlagName: server_array[elasticity_params][schedule][][day] -- Operating at root: false
-												// Assigned to parent map at day because temp_attr wasn't null, which it never will be
-												// Discovered at key day of parent map and updating -- Submatch: ["[day]" "" "day"] at idx 3 -- Operating at root: false
-												// Assigned to parent map at day because temp_attr wasn't null, which it never will be
-												"day": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key max_count. -- Submatch: ["[max_count]" "" "max_count"] at idx 3 -- cmdFlagName: server_array[elasticity_params][schedule][][max_count] -- Operating at root: false
-												// Assigned to parent map at max_count because temp_attr wasn't null, which it never will be
-												// Discovered at key max_count of parent map and updating -- Submatch: ["[max_count]" "" "max_count"] at idx 3 -- Operating at root: false
-												// Assigned to parent map at max_count because temp_attr wasn't null, which it never will be
-												"max_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key min_count. -- Submatch: ["[min_count]" "" "min_count"] at idx 3 -- cmdFlagName: server_array[elasticity_params][schedule][][min_count] -- Operating at root: false
-												// Assigned to parent map at min_count because temp_attr wasn't null, which it never will be
-												// Discovered at key min_count of parent map and updating -- Submatch: ["[min_count]" "" "min_count"] at idx 3 -- Operating at root: false
-												// Assigned to parent map at min_count because temp_attr wasn't null, which it never will be
-												"min_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Child at parent[schedule][schedule] -- Submatch: ["[schedule]" "" "schedule"] at idx 1 -- cmdFlagName: server_array[elasticity_params][schedule][][max_count]
-												"schedule": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key time. -- Submatch: ["[time]" "" "time"] at idx 3 -- cmdFlagName: server_array[elasticity_params][schedule][][time] -- Operating at root: false
-												// Assigned to parent map at time because temp_attr wasn't null, which it never will be
-												// Discovered at key time of parent map and updating -- Submatch: ["[time]" "" "time"] at idx 3 -- Operating at root: false
-												// Assigned to parent map at time because temp_attr wasn't null, which it never will be
-												"time": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO Child at parent[server_array][instance] -- Submatch: ["server_array[instance]" "server_array" "instance"] at idx 0 -- cmdFlagName: server_array[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][automatic_instance_store_mapping]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_performance]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][iam_instance_profile]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_type_uid]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][local_ssd_interface]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][create_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][delete_boot_volume]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][placement_tenancy]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_size]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][local_ssd_count]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][keep_alive_url]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][max_spot_price]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][keep_alive_id]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][pricing_type]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][preemptible]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][num_cores]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][memory_mb]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_specific_attributes][disk_gb]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][associate_public_ip_address]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][multi_cloud_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][ip_forwarding_enabled]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][placement_group_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][security_group_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][server_template_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][ramdisk_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][instance_type_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][kernel_image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][inputs][][value]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][inputs]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][datacenter_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][inputs][][name]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][ssh_key_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][subnet_hrefs][]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][cloud_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][image_href]
-						// (At Root) My children became the parent map. -- Submatch: ["server_array[instance]" "server_array" "instance"] -- CmdFlag: server_array[instance][user_data]
-						"instance": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created for key associate_public_ip_address. -- Submatch: ["[associate_public_ip_address]" "" "associate_public_ip_address"] at idx 1 -- cmdFlagName: server_array[instance][associate_public_ip_address] -- Operating at root: false
-									// Assigned to parent map at associate_public_ip_address because temp_attr wasn't null, which it never will be
-									"associate_public_ip_address": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key cloud_href. -- Submatch: ["[cloud_href]" "" "cloud_href"] at idx 1 -- cmdFlagName: server_array[instance][cloud_href] -- Operating at root: false
-									// Assigned to parent map at cloud_href because temp_attr wasn't null, which it never will be
-									"cloud_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was cloud_specific_attributes -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][automatic_instance_store_mapping]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_performance]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][iam_instance_profile]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_type_uid]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][local_ssd_interface]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][create_boot_volume]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][delete_boot_volume]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][placement_tenancy]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][root_volume_size]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][local_ssd_count]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][keep_alive_url]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][max_spot_price]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][keep_alive_id]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][pricing_type]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][preemptible]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][num_cores]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][memory_mb]
-									// Discovered at key cloud_specific_attributes of parent map and updating -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] -- CmdFlag: server_array[instance][cloud_specific_attributes][disk_gb]
-									"cloud_specific_attributes": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Created for key automatic_instance_store_mapping. -- Submatch: ["[automatic_instance_store_mapping]" "" "automatic_instance_store_mapping"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][automatic_instance_store_mapping] -- Operating at root: false
-												// Assigned to parent map at automatic_instance_store_mapping because temp_attr wasn't null, which it never will be
-												"automatic_instance_store_mapping": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Child at parent[cloud_specific_attributes][cloud_specific_attributes] -- Submatch: ["[cloud_specific_attributes]" "" "cloud_specific_attributes"] at idx 1 -- cmdFlagName: server_array[instance][cloud_specific_attributes][create_default_port_forwarding_rules]
-												"cloud_specific_attributes": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key create_boot_volume. -- Submatch: ["[create_boot_volume]" "" "create_boot_volume"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][create_boot_volume] -- Operating at root: false
-												// Assigned to parent map at create_boot_volume because temp_attr wasn't null, which it never will be
-												"create_boot_volume": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key create_default_port_forwarding_rules. -- Submatch: ["[create_default_port_forwarding_rules]" "" "create_default_port_forwarding_rules"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][create_default_port_forwarding_rules] -- Operating at root: false
-												// Assigned to parent map at create_default_port_forwarding_rules because temp_attr wasn't null, which it never will be
-												"create_default_port_forwarding_rules": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key delete_boot_volume. -- Submatch: ["[delete_boot_volume]" "" "delete_boot_volume"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][delete_boot_volume] -- Operating at root: false
-												// Assigned to parent map at delete_boot_volume because temp_attr wasn't null, which it never will be
-												"delete_boot_volume": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key disk_gb. -- Submatch: ["[disk_gb]" "" "disk_gb"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][disk_gb] -- Operating at root: false
-												// Assigned to parent map at disk_gb because temp_attr wasn't null, which it never will be
-												"disk_gb": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key iam_instance_profile. -- Submatch: ["[iam_instance_profile]" "" "iam_instance_profile"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][iam_instance_profile] -- Operating at root: false
-												// Assigned to parent map at iam_instance_profile because temp_attr wasn't null, which it never will be
-												"iam_instance_profile": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key keep_alive_id. -- Submatch: ["[keep_alive_id]" "" "keep_alive_id"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][keep_alive_id] -- Operating at root: false
-												// Assigned to parent map at keep_alive_id because temp_attr wasn't null, which it never will be
-												"keep_alive_id": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key keep_alive_url. -- Submatch: ["[keep_alive_url]" "" "keep_alive_url"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][keep_alive_url] -- Operating at root: false
-												// Assigned to parent map at keep_alive_url because temp_attr wasn't null, which it never will be
-												"keep_alive_url": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key local_ssd_count. -- Submatch: ["[local_ssd_count]" "" "local_ssd_count"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][local_ssd_count] -- Operating at root: false
-												// Assigned to parent map at local_ssd_count because temp_attr wasn't null, which it never will be
-												"local_ssd_count": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key local_ssd_interface. -- Submatch: ["[local_ssd_interface]" "" "local_ssd_interface"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][local_ssd_interface] -- Operating at root: false
-												// Assigned to parent map at local_ssd_interface because temp_attr wasn't null, which it never will be
-												"local_ssd_interface": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key max_spot_price. -- Submatch: ["[max_spot_price]" "" "max_spot_price"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][max_spot_price] -- Operating at root: false
-												// Assigned to parent map at max_spot_price because temp_attr wasn't null, which it never will be
-												"max_spot_price": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key memory_mb. -- Submatch: ["[memory_mb]" "" "memory_mb"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][memory_mb] -- Operating at root: false
-												// Assigned to parent map at memory_mb because temp_attr wasn't null, which it never will be
-												"memory_mb": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key num_cores. -- Submatch: ["[num_cores]" "" "num_cores"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][num_cores] -- Operating at root: false
-												// Assigned to parent map at num_cores because temp_attr wasn't null, which it never will be
-												"num_cores": &schema.Schema{
-													Type:     schema.TypeInt,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key placement_tenancy. -- Submatch: ["[placement_tenancy]" "" "placement_tenancy"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][placement_tenancy] -- Operating at root: false
-												// Assigned to parent map at placement_tenancy because temp_attr wasn't null, which it never will be
-												"placement_tenancy": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key preemptible. -- Submatch: ["[preemptible]" "" "preemptible"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][preemptible] -- Operating at root: false
-												// Assigned to parent map at preemptible because temp_attr wasn't null, which it never will be
-												"preemptible": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key pricing_type. -- Submatch: ["[pricing_type]" "" "pricing_type"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][pricing_type] -- Operating at root: false
-												// Assigned to parent map at pricing_type because temp_attr wasn't null, which it never will be
-												"pricing_type": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_performance. -- Submatch: ["[root_volume_performance]" "" "root_volume_performance"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][root_volume_performance] -- Operating at root: false
-												// Assigned to parent map at root_volume_performance because temp_attr wasn't null, which it never will be
-												"root_volume_performance": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_size. -- Submatch: ["[root_volume_size]" "" "root_volume_size"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][root_volume_size] -- Operating at root: false
-												// Assigned to parent map at root_volume_size because temp_attr wasn't null, which it never will be
-												"root_volume_size": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key root_volume_type_uid. -- Submatch: ["[root_volume_type_uid]" "" "root_volume_type_uid"] at idx 2 -- cmdFlagName: server_array[instance][cloud_specific_attributes][root_volume_type_uid] -- Operating at root: false
-												// Assigned to parent map at root_volume_type_uid because temp_attr wasn't null, which it never will be
-												"root_volume_type_uid": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key datacenter_href. -- Submatch: ["[datacenter_href]" "" "datacenter_href"] at idx 1 -- cmdFlagName: server_array[instance][datacenter_href] -- Operating at root: false
-									// Assigned to parent map at datacenter_href because temp_attr wasn't null, which it never will be
-									"datacenter_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key image_href. -- Submatch: ["[image_href]" "" "image_href"] at idx 1 -- cmdFlagName: server_array[instance][image_href] -- Operating at root: false
-									// Assigned to parent map at image_href because temp_attr wasn't null, which it never will be
-									"image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was inputs -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[inputs]" "" "inputs"] -- CmdFlag: server_array[instance][inputs][][value]
-									// Discovered at key inputs of parent map and updating -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// Assigned to parent map at inputs because temp_attr wasn't null, which it never will be
-									// Discovered at key inputs of parent map and updating -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[inputs]" "" "inputs"] -- CmdFlag: server_array[instance][inputs][][name]
-									"inputs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[inputs][inputs] -- Submatch: ["[inputs]" "" "inputs"] at idx 1 -- cmdFlagName: server_array[instance][inputs][][value]
-												"inputs": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key name. -- Submatch: ["[name]" "" "name"] at idx 3 -- cmdFlagName: server_array[instance][inputs][][name] -- Operating at root: false
-												// Assigned to parent map at name because temp_attr wasn't null, which it never will be
-												"name": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-												// DEBUG INFO Created for key value. -- Submatch: ["[value]" "" "value"] at idx 3 -- cmdFlagName: server_array[instance][inputs][][value] -- Operating at root: false
-												// Assigned to parent map at value because temp_attr wasn't null, which it never will be
-												"value": &schema.Schema{
-													Type:     schema.TypeString,
-													Optional: true,
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key instance_type_href. -- Submatch: ["[instance_type_href]" "" "instance_type_href"] at idx 1 -- cmdFlagName: server_array[instance][instance_type_href] -- Operating at root: false
-									// Assigned to parent map at instance_type_href because temp_attr wasn't null, which it never will be
-									"instance_type_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ip_forwarding_enabled. -- Submatch: ["[ip_forwarding_enabled]" "" "ip_forwarding_enabled"] at idx 1 -- cmdFlagName: server_array[instance][ip_forwarding_enabled] -- Operating at root: false
-									// Assigned to parent map at ip_forwarding_enabled because temp_attr wasn't null, which it never will be
-									"ip_forwarding_enabled": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key kernel_image_href. -- Submatch: ["[kernel_image_href]" "" "kernel_image_href"] at idx 1 -- cmdFlagName: server_array[instance][kernel_image_href] -- Operating at root: false
-									// Assigned to parent map at kernel_image_href because temp_attr wasn't null, which it never will be
-									"kernel_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key multi_cloud_image_href. -- Submatch: ["[multi_cloud_image_href]" "" "multi_cloud_image_href"] at idx 1 -- cmdFlagName: server_array[instance][multi_cloud_image_href] -- Operating at root: false
-									// Assigned to parent map at multi_cloud_image_href because temp_attr wasn't null, which it never will be
-									"multi_cloud_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key placement_group_href. -- Submatch: ["[placement_group_href]" "" "placement_group_href"] at idx 1 -- cmdFlagName: server_array[instance][placement_group_href] -- Operating at root: false
-									// Assigned to parent map at placement_group_href because temp_attr wasn't null, which it never will be
-									"placement_group_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created for key ramdisk_image_href. -- Submatch: ["[ramdisk_image_href]" "" "ramdisk_image_href"] at idx 1 -- cmdFlagName: server_array[instance][ramdisk_image_href] -- Operating at root: false
-									// Assigned to parent map at ramdisk_image_href because temp_attr wasn't null, which it never will be
-									"ramdisk_image_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was security_group_hrefs -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] -- CmdFlag: server_array[instance][security_group_hrefs][]
-									"security_group_hrefs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[security_group_hrefs][security_group_hrefs] -- Submatch: ["[security_group_hrefs]" "" "security_group_hrefs"] at idx 1 -- cmdFlagName: server_array[instance][security_group_hrefs][]
-												"security_group_hrefs": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key server_template_href. -- Submatch: ["[server_template_href]" "" "server_template_href"] at idx 1 -- cmdFlagName: server_array[instance][server_template_href] -- Operating at root: false
-									// Assigned to parent map at server_template_href because temp_attr wasn't null, which it never will be
-									"server_template_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Required: true,
-									},
-									// DEBUG INFO Created for key ssh_key_href. -- Submatch: ["[ssh_key_href]" "" "ssh_key_href"] at idx 1 -- cmdFlagName: server_array[instance][ssh_key_href] -- Operating at root: false
-									// Assigned to parent map at ssh_key_href because temp_attr wasn't null, which it never will be
-									"ssh_key_href": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was subnet_hrefs -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] -- CmdFlag: server_array[instance][subnet_hrefs][]
-									"subnet_hrefs": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[subnet_hrefs][subnet_hrefs] -- Submatch: ["[subnet_hrefs]" "" "subnet_hrefs"] at idx 1 -- cmdFlagName: server_array[instance][subnet_hrefs][]
-												"subnet_hrefs": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created for key user_data. -- Submatch: ["[user_data]" "" "user_data"] at idx 1 -- cmdFlagName: server_array[instance][user_data] -- Operating at root: false
-									// Assigned to parent map at user_data because temp_attr wasn't null, which it never will be
-									"user_data": &schema.Schema{
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"optimized": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"state": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -11201,8 +8512,8 @@ func ServerArraySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_array"); ok {
-		// param_map["server_array"] = val
-		recursiveSchemaSetValueGet("server_array", val, param_map)
+		param_map["server_array"] = val
+		// recursiveSchemaSetValueGet("server_array", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -11340,7 +8651,7 @@ func resourceRightScaleServerArrayRead(d *schema.ResourceData, meta interface{})
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// ServerArrayMapToSchema(d, resource)
+		ServerArrayMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -11442,28 +8753,8 @@ func resourceRightScaleServerTemplate() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at server_template because temp_attr wasn't null, which it never will be
 			"server_template": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -11473,8 +8764,8 @@ func ServerTemplateSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_template"); ok {
-		// param_map["server_template"] = val
-		recursiveSchemaSetValueGet("server_template", val, param_map)
+		param_map["server_template"] = val
+		// recursiveSchemaSetValueGet("server_template", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -11611,7 +8902,7 @@ func resourceRightScaleServerTemplateRead(d *schema.ResourceData, meta interface
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// ServerTemplateMapToSchema(d, resource)
+		ServerTemplateMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -11667,28 +8958,8 @@ func resourceRightScaleServerTemplateMultiCloudImage() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at server_template_multi_cloud_image because temp_attr wasn't null, which it never will be
 			"server_template_multi_cloud_image": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"multi_cloud_image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"server_template_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -11699,8 +8970,8 @@ func ServerTemplateMultiCloudImageSchemaToMap(d *schema.ResourceData) map[string
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("server_template_multi_cloud_image"); ok {
-		// param_map["server_template_multi_cloud_image"] = val
-		recursiveSchemaSetValueGet("server_template_multi_cloud_image", val, param_map)
+		param_map["server_template_multi_cloud_image"] = val
+		// recursiveSchemaSetValueGet("server_template_multi_cloud_image", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -11837,7 +9108,7 @@ func resourceRightScaleServerTemplateMultiCloudImageRead(d *schema.ResourceData,
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// ServerTemplateMultiCloudImageMapToSchema(d, resource)
+		ServerTemplateMultiCloudImageMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -11914,22 +9185,8 @@ func resourceRightScaleSshKey() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at ssh_key because temp_attr wasn't null, which it never will be
 			"ssh_key": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -11940,8 +9197,8 @@ func SshKeySchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("ssh_key"); ok {
-		// param_map["ssh_key"] = val
-		recursiveSchemaSetValueGet("ssh_key", val, param_map)
+		param_map["ssh_key"] = val
+		// recursiveSchemaSetValueGet("ssh_key", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -12078,7 +9335,7 @@ func resourceRightScaleSshKeyRead(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// SshKeyMapToSchema(d, resource)
+		SshKeyMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -12155,52 +9412,8 @@ func resourceRightScaleSubnet() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at subnet because temp_attr wasn't null, which it never will be
 			"subnet": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"cidr_block": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"datacenter_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"network_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"route_table_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -12210,8 +9423,8 @@ func SubnetSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("subnet"); ok {
-		// param_map["subnet"] = val
-		recursiveSchemaSetValueGet("subnet", val, param_map)
+		param_map["subnet"] = val
+		// recursiveSchemaSetValueGet("subnet", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -12348,7 +9561,7 @@ func resourceRightScaleSubnetRead(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// SubnetMapToSchema(d, resource)
+		SubnetMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -12462,7 +9675,7 @@ func resourceRightScaleTaskRead(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// TaskMapToSchema(d, resource)
+		TaskMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -12570,94 +9783,8 @@ func resourceRightScaleUser() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at user because temp_attr wasn't null, which it never will be
 			"user": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"company": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"current_email": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"current_password": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"email": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"first_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"identity_provider_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"last_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"new_email": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"new_password": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"password": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"phone": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"principal_uid": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"timezone_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -12667,8 +9794,8 @@ func UserSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("user"); ok {
-		// param_map["user"] = val
-		recursiveSchemaSetValueGet("user", val, param_map)
+		param_map["user"] = val
+		// recursiveSchemaSetValueGet("user", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -12775,7 +9902,7 @@ func resourceRightScaleUserRead(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// UserMapToSchema(d, resource)
+		UserMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -12849,7 +9976,7 @@ func resourceRightScaleUserDataRead(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// UserDataMapToSchema(d, resource)
+		UserDataMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -12906,138 +10033,8 @@ func resourceRightScaleVolume() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at volume because temp_attr wasn't null, which it never will be
 			"volume": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO Child at parent[volume][allowed_instance_hrefs] -- Submatch: ["volume[allowed_instance_hrefs]" "volume" "allowed_instance_hrefs"] at idx 0 -- cmdFlagName: volume[allowed_instance_hrefs][remove][]
-						// My children are being initialized, they were []
-						// (At Root) My children became the parent map. -- Submatch: ["volume[allowed_instance_hrefs]" "volume" "allowed_instance_hrefs"] -- CmdFlag: volume[allowed_instance_hrefs][remove][]
-						// (At Root) My children became the parent map. -- Submatch: ["volume[allowed_instance_hrefs]" "volume" "allowed_instance_hrefs"] -- CmdFlag: volume[allowed_instance_hrefs][add][]
-						"allowed_instance_hrefs": &schema.Schema{
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was add -- Submatch: ["[add]" "" "add"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[add]" "" "add"] -- CmdFlag: volume[allowed_instance_hrefs][add][]
-									"add": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[add][add] -- Submatch: ["[add]" "" "add"] at idx 1 -- cmdFlagName: volume[allowed_instance_hrefs][add][]
-												"add": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-									// DEBUG INFO Created as a child node when an existing child of the same key was not found. Parent was remove -- Submatch: ["[remove]" "" "remove"] at idx 1 -- Operating at root: false
-									// (Below Root) My children became the parent map. -- Submatch: ["[remove]" "" "remove"] -- CmdFlag: volume[allowed_instance_hrefs][remove][]
-									"remove": &schema.Schema{
-										Type:     schema.TypeSet,
-										Optional: true,
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												// DEBUG INFO Child at parent[remove][remove] -- Submatch: ["[remove]" "" "remove"] at idx 1 -- cmdFlagName: volume[allowed_instance_hrefs][remove][]
-												"remove": &schema.Schema{
-													Type:     schema.TypeList,
-													Optional: true,
-													Elem:     &schema.Schema{Type: schema.TypeString},
-												},
-											},
-										},
-										Set: func(v interface{}) int {
-											// there can be only one root device; no need to hash anything
-											return 0
-										},
-									},
-								},
-							},
-							Set: func(v interface{}) int {
-								// there can be only one root device; no need to hash anything
-								return 0
-							},
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"datacenter_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"encrypted": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"image_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"iops": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"parent_volume_snapshot_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"placement_group_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"size": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"volume_type_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 			},
 		},
 	}
@@ -13047,8 +10044,8 @@ func VolumeSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume"); ok {
-		// param_map["volume"] = val
-		recursiveSchemaSetValueGet("volume", val, param_map)
+		param_map["volume"] = val
+		// recursiveSchemaSetValueGet("volume", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -13185,7 +10182,7 @@ func resourceRightScaleVolumeRead(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// VolumeMapToSchema(d, resource)
+		VolumeMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -13243,40 +10240,8 @@ func resourceRightScaleVolumeAttachment() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at volume_attachment because temp_attr wasn't null, which it never will be
 			"volume_attachment": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"device": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"instance_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"settings": &schema.Schema{
-							Type:     schema.TypeMap,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"volume_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -13287,8 +10252,8 @@ func VolumeAttachmentSchemaToMap(d *schema.ResourceData) map[string]interface{} 
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume_attachment"); ok {
-		// param_map["volume_attachment"] = val
-		recursiveSchemaSetValueGet("volume_attachment", val, param_map)
+		param_map["volume_attachment"] = val
+		// recursiveSchemaSetValueGet("volume_attachment", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -13425,7 +10390,7 @@ func resourceRightScaleVolumeAttachmentRead(d *schema.ResourceData, meta interfa
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// VolumeAttachmentMapToSchema(d, resource)
+		VolumeAttachmentMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -13484,40 +10449,8 @@ func resourceRightScaleVolumeSnapshot() *schema.Resource {
 			// Matched at subMatchIdx == last -- Operating at root: true
 			// Assigned to parent map at volume_snapshot because temp_attr wasn't null, which it never will be
 			"volume_snapshot": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeMap,
 				Required: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"deployment_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"description": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-						// DEBUG INFO %!s(MISSING)
-						// Assigned inside of last subMatch but child name didn't match parent name
-						"parent_volume_href": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				Set: func(v interface{}) int {
-					// there can be only one root device; no need to hash anything
-					return 0
-				},
 				ForceNew: true,
 			},
 		},
@@ -13528,8 +10461,8 @@ func VolumeSnapshotSchemaToMap(d *schema.ResourceData) map[string]interface{} {
 	param_map := make(map[string]interface{})
 
 	if val, ok := d.GetOk("volume_snapshot"); ok {
-		// param_map["volume_snapshot"] = val
-		recursiveSchemaSetValueGet("volume_snapshot", val, param_map)
+		param_map["volume_snapshot"] = val
+		// recursiveSchemaSetValueGet("volume_snapshot", val, param_map)
 		log.Printf("DEBUG Val for attribute was %q", param_map)
 	}
 
@@ -13666,7 +10599,7 @@ func resourceRightScaleVolumeSnapshotRead(d *schema.ResourceData, meta interface
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// VolumeSnapshotMapToSchema(d, resource)
+		VolumeSnapshotMapToSchema(d, resource)
 	}
 	return nil
 }
@@ -13743,7 +10676,7 @@ func resourceRightScaleVolumeTypeRead(d *schema.ResourceData, meta interface{}) 
 			return fmt.Errorf(message)
 		}
 		log.Printf("Unmarshaled json %q", resource)
-		// VolumeTypeMapToSchema(d, resource)
+		VolumeTypeMapToSchema(d, resource)
 	}
 	return nil
 }
