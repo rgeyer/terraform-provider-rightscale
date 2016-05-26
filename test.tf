@@ -11,7 +11,19 @@ provider "rightscale" {
 resource "rightscale_deployment" "terraform-test" {
   deployment {
     name        = "Test Created from Terraform"
-    description = "Description"
+    description = "Description is the best!"
+  }
+}
+
+resource "rightscale_server" "terraform-server-test" {
+  server {
+    name = "Test from Terraform you hoe"
+#    deployment_href = "${rightscale_deployment.terraform-test.id}"
+    deployment_href = "/api/deployments/104278"
+    instance {
+      server_template_href = "/api/server_templates/366194004"
+      cloud_href = "/api/clouds/1"
+    }
   }
 }
 

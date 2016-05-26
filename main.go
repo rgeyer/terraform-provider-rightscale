@@ -23,11 +23,12 @@ type TerraformWriter struct {
 // NewTerraformWriter creates a new writer that generates metadata data structures.
 func NewTerraformWriter() (*TerraformWriter, error) {
 	funcMap := template.FuncMap{
-    "underscore":       inflect.Underscore,
-    "camelize":         inflect.Camelize,
-		"join":            	strings.Join,
-		"isCreateOrUpdate":	stringIsCreateOrUpdate,
-		"terraformSchemaAttributes": terraformSchemaAttributes,
+    "underscore":       					inflect.Underscore,
+    "camelize":         					inflect.Camelize,
+		"join":            						strings.Join,
+		"isCreateOrUpdate":						stringIsCreateOrUpdate,
+		"hasReadAction": 							hasReadAction,
+		"terraformSchemaAttributes": 	terraformSchemaAttributes,
 	}
 	headerT, err := template.New("header-terraform").Funcs(funcMap).Parse(headerTerraformTmpl)
 	if err != nil {
@@ -61,6 +62,16 @@ func stringIsCreateOrUpdate(s string) bool {
       }
   }
   return false
+}
+
+func hasReadAction(res *metadata.Resource) bool {
+	has_read := false
+	for _, action := range res.Actions {
+		if action.Name == "show" {
+			has_read = true
+		}
+	}
+	return has_read
 }
 
 type TerraformSchemaAttribute struct {
@@ -271,28 +282,28 @@ func terraformSchemaAttributes(r *metadata.Resource) []*TerraformSchemaAttribute
     }
 	}
 
-	for _, attribute := range r.Attributes {
-		if len(top_level_attr) > 0 {
-			if _, ok := top_level_attr[0].Children[attribute.Name]; ok {
-				// A property at the root has a child property with this same name.
-				// This is meant to match stuff like deployment[name] and name, which
-				// are actually the same thing.
-				continue
-			}
-		}
-		var attr *TerraformSchemaAttribute
-		if val, ok := par_attr[attribute.Name]; ok {
-			attr = val
-		} else {
-	    attr = &TerraformSchemaAttribute{
-	      Name: attribute.Name,
-	      Computed: true,
-	      Required: false,
-	    }
-		}
-    attr.SetSchemaTypes(attribute.FieldType)
-    par_attr[attribute.Name] = attr
-  }
+	// for _, attribute := range r.Attributes {
+	// 	if len(top_level_attr) > 0 {
+	// 		if _, ok := top_level_attr[0].Children[attribute.Name]; ok {
+	// 			// A property at the root has a child property with this same name.
+	// 			// This is meant to match stuff like deployment[name] and name, which
+	// 			// are actually the same thing.
+	// 			continue
+	// 		}
+	// 	}
+	// 	var attr *TerraformSchemaAttribute
+	// 	if val, ok := par_attr[attribute.Name]; ok {
+	// 		attr = val
+	// 	} else {
+	//     attr = &TerraformSchemaAttribute{
+	//       Name: attribute.Name,
+	//       Computed: true,
+	//       Required: false,
+	//     }
+	// 	}
+  //   attr.SetSchemaTypes(attribute.FieldType)
+  //   par_attr[attribute.Name] = attr
+  // }
 
 	has_children := 0
 	for _, val := range par_attr {
@@ -326,10 +337,36 @@ import (
 	"fmt"
   "log"
 	"io/ioutil"
+	"encoding/json"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/rightscale/rsc/cm15"
 	"github.com/rightscale/rsc/rsapi"
 )
+
+func recursiveSchemaSetValueGet(key string, val interface{}, param_map map[string]interface{}) {
+	if set, ok := val.(*schema.Set); ok {
+		child_map := make(map[string]interface{})
+		for _, elem := range set.List() {
+			elemMap := elem.(map[string]interface{})
+			for set_key, value := range elemMap {
+				if _, ok := value.(*schema.Set); ok {
+					recursiveSchemaSetValueGet(set_key, value, child_map)
+				} else {
+					if value != "" && value != "0" {
+						child_map[set_key] = value
+					}
+				}
+			}
+		}
+		if len(child_map) > 0 {
+			param_map[key] = child_map
+		}
+	} else {
+		if val != "" && val != "0" {
+			param_map[key] = val
+		}
+	}
+}
 `
 
 const resourceTerraformTmpl = `{{define "schemaObject"}}// DEBUG INFO {{.Debug}}
@@ -342,6 +379,10 @@ const resourceTerraformTmpl = `{{define "schemaObject"}}// DEBUG INFO {{.Debug}}
 				{{range .Children}}{{template "schemaObject" .}},
 				{{end}}
 			},
+		},
+		Set: func(v interface{}) int {
+			// there can be only one root device; no need to hash anything
+			return 0
 		},{{else}}{{if .Elem}}
 		Elem: {{.Elem}},{{end}}{{end}}{{if .ForceNew}}
 		ForceNew: true,{{end}}
@@ -367,34 +408,61 @@ func resourceRightScale{{$resource.Name}}() *schema.Resource {
 	}
 }
 
+func {{$resource.Name}}SchemaToMap(d *schema.ResourceData) map[string]interface{} {
+	param_map := make(map[string]interface{})
+
+	{{range $attributes}}{{if not .Computed}}if val, ok := d.GetOk("{{.Name}}"); ok {
+		// param_map["{{.Name}}"] = val
+		recursiveSchemaSetValueGet("{{.Name}}", val, param_map)
+		log.Printf("DEBUG Val for attribute was %q", param_map)
+	}
+	{{end}}{{end}}
+
+	return param_map
+}
+
+func {{$resource.Name}}MapToSchema(d *schema.ResourceData, resMap map[string]interface{}) {
+	{{range $attributes}}{{if not .Computed}}
+	if depl, ok := d.GetOk("{{.Name}}"); ok {
+		depl_as_map := depl.(map[string]interface{})
+		for resMapKey, resMapValue := range resMap {
+			if _, ok = depl_as_map[resMapKey]; ok {
+				depl_as_map[resMapKey] = resMapValue
+			}
+		}
+		d.Set("{{.Name}}", depl_as_map)
+	} else {
+		log.Printf("[DEBUG] The {{.Name}} property of the {{$resource.Name}} resource was not set on read")
+	}{{end}}{{end}}
+}
+
 {{range .Actions}}{{$action := .}}
 {{if eq .Name "create"}}func resourceRightScale{{$resource.Name}}Create(d *schema.ResourceData, meta interface{}) error {
   client := meta.(*cm15.API)
   {{$firstPath := index $action.PathPatterns 0}}
 	params := rsapi.APIParams{}
+	param_map := {{$resource.Name}}SchemaToMap(d)
 
-	{{range $attributes}}{{if not .Computed}}if val, ok := d.GetOk("{{.Name}}"); ok {
-		params["{{.Name}}"] = val
-		log.Printf("DEBUG Val for attribute was %q", val)
+	for key, val := range param_map {
+		params[key] = val
 	}
-	{{end}}{{end}}
 
 	req, err := client.BuildRequest("{{$resource.Name}}", "{{$action.Name}}", "{{$firstPath.Pattern}}", params)
 	if err != nil {
-		message := fmt.Sprintf("{{$resource.Name}} Could not create HTTP request. Error: %s", err.Error())
+		message := fmt.Sprintf("{{$resource.Name}} create action, could not create HTTP request. Error: %s", err.Error())
 		log.Printf("[DEBUG] %s", message)
 		return fmt.Errorf(message)
 	}
 	resp, err := client.PerformRequest(req)
 	if err != nil {
-		message := fmt.Sprintf("{{$resource.Name}} Could not execute HTTP request. Error: %s", err.Error())
+		message := fmt.Sprintf("{{$resource.Name}} create action, could not execute HTTP request. Error: %s", err.Error())
 		log.Printf("[DEBUG] %s", message)
 		return fmt.Errorf(message)
 	}
 	if resp.StatusCode != 201 {
 		contents, err := ioutil.ReadAll(resp.Body)
     if err != nil {
-			message := fmt.Sprintf("{{$resource.Name}} HTTP Response was %d rather than 201 for a create request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			message := fmt.Sprintf("{{$resource.Name}} create action, HTTP Response was %d rather than 201 for a create request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
 			log.Printf("[DEBUG] %s", message)
 			return fmt.Errorf(message)
     }
@@ -403,18 +471,88 @@ func resourceRightScale{{$resource.Name}}() *schema.Resource {
 		return fmt.Errorf(message)
 	} else {
 		// This is where we do some processing on this thang!
+
+		// Set this resource id to RightScale HREF
+		locHref := resp.Header.Get("location")
+		d.SetId(string(locHref))
 	}
 
-	// Set this resource id to RightScale HREF
-	// d.SetId(string(resource.Href))
-
-	// return resourceRightScale{{$resource.Name}}Read(d, meta)
-	return nil
+	{{if hasReadAction $resource}}return resourceRightScale{{$resource.Name}}Read(d, meta){{else}}return nil{{end}}
 }{{end}}{{if eq .Name "show"}}func resourceRightScale{{$resource.Name}}Read(d *schema.ResourceData, meta interface{}) error {
-  return nil
+	client := meta.(*cm15.API)
+
+	req, err := client.BuildRequest("{{$resource.Name}}", "show", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("{{$resource.Name}} read action, could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("{{$resource.Name}} read action, could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 200 {
+		contents, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+			message := fmt.Sprintf("{{$resource.Name}} read action, HTTP Response was %d rather than 200 for a show request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+    }
+		message := fmt.Sprintf("{{$resource.Name}} read action failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		// This is where we do some processing on this thang!
+		// Gotta somehow set all the parameters, and gotta do it recursively
+		resJson, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("{{$resource.Name}} read action, could not read body of HTTP response. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		var resource map[string]interface{}
+		err = json.Unmarshal(resJson, &resource)
+		if err != nil {
+			message := fmt.Sprint("{{$resource.Name}} read action, failed to unmarshal resource JSON. Error: %s", err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		log.Printf("Unmarshaled json %q", resource)
+		// {{$resource.Name}}MapToSchema(d, resource)
+	}
+	return nil
 }{{end}}{{if eq .Name "update"}}func resourceRightScale{{$resource.Name}}Update(d *schema.ResourceData, meta interface{}) error {
-  return nil
+  return fmt.Errorf("Update method not implemented")
 }{{end}}{{if eq .Name "destroy"}}func resourceRightScale{{$resource.Name}}Delete(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*cm15.API)
+	req, err := client.BuildRequest("{{$resource.Name}}", "destroy", d.Id(), nil)
+	if err != nil {
+		message := fmt.Sprintf("{{$resource.Name}} delete action, could not create HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	resp, err := client.PerformRequest(req)
+	if err != nil {
+		message := fmt.Sprintf("{{$resource.Name}} delete action, could not execute HTTP request. Error: %s", err.Error())
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	}
+	if resp.StatusCode != 204 {
+		contents, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			message := fmt.Sprintf("{{$resource.Name}} delete action, HTTP Response was %d rather than 204 for a delete request. Could not read the body of the HTTP request. Error: %s", resp.StatusCode, err.Error())
+			log.Printf("[DEBUG] %s", message)
+			return fmt.Errorf(message)
+		}
+		message := fmt.Sprintf("{{$resource.Name}} delete action, failed. Status Code: %d Error: %s", resp.StatusCode, contents)
+		log.Printf("[DEBUG] %s", message)
+		return fmt.Errorf(message)
+	} else {
+		log.Printf("[DEBUG] All is well, {{$resource.Name}} was deleted")
+	}
+
   return nil
 }{{end}}{{end}}
 {{end}}
