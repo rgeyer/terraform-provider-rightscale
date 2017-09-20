@@ -10,31 +10,25 @@ provider "rightscale" {
 
 resource "rightscale_deployment" "terraform-test" {
   deployment {
-    name        = "Test Created from Terraform"
+    name        = "001 - Test Created from Terraform v2"
     description = "Description is the best!"
   }
 }
 
 resource "rightscale_server" "terraform-server-test" {
   server {
-    name = "Test from Terraform you hoe"
-#    deployment_href = "${rightscale_deployment.terraform-test.id}"
-    deployment_href = "/api/deployments/104278"
+    name = "Test from Terraform"
+    deployment_href = "${rightscale_deployment.terraform-test.id}"
+#    deployment_href = "/api/deployments/104278"
     instance {
       server_template_href = "/api/server_templates/366194004"
       cloud_href = "/api/clouds/1"
+
     }
   }
+  count = 2
 }
 
 output "rightscale_deployment.terraform-test.href" {
   value = "${rightscale_deployment.terraform-test.id}"
-}
-
-output "rightscale_deployment.terraform-test.name" {
-  value = "${rightscale_deployment.terraform-test.name}"
-}
-
-output "rightscale_deployment.terraform-test.description" {
-  value = "${rightscale_deployment.terraform-test.description}"
 }
